@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>Missing Media Checker</title></head>
+<body>
+<div id="MissingMediaCheckerPage" data-role="page" class="page libraryPage noSecondaryNavPage"
+     data-require="emby-checkbox,emby-button,emby-input">
+    <div data-role="content">
+        <div class="content-primary">
+
+            <style>
+                #MissingMediaCheckerPage .content-primary { padding-top: 0; }
+
+                .mmc-tabs {
+                    display: flex; gap: 4px;
+                    border-bottom: 1px solid rgba(255,255,255,0.12);
+                    margin-bottom: 1.5em;
+                }
+                .mmc-tab {
+                    padding: 10px 20px; background: none; border: none;
+                    color: inherit; cursor: pointer; font-size: 0.95em;
+                    border-bottom: 2px solid transparent;
+                    margin-bottom: -1px; opacity: 0.7;
+                }
+                .mmc-tab:hover { opacity: 1; }
+                .mmc-tab.active { opacity: 1; border-bottom-color: #00a4dc; }
+
+                .mmc-summary { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 1.5em; }
+                .mmc-card {
+                    border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+                    padding: 12px 18px; min-width: 130px; text-align: center;
+                }
+                .mmc-card-num { font-size: 1.8em; font-weight: bold; color: #00a4dc; }
+                .mmc-card-num.warn { color: #ff9800; }
+                .mmc-card-lbl { font-size: 0.78em; opacity: 0.6; margin-top: 4px; }
+
+                .mmc-toolbar {
+                    display: flex; flex-wrap: wrap; gap: 10px;
+                    align-items: center; margin-bottom: 1.5em;
+                }
+                .mmc-toolbar input[type="text"] {
+                    padding: 6px 10px; border-radius: 3px;
+                    border: 1px solid rgba(255,255,255,0.15);
+                    background: rgba(255,255,255,0.05); color: inherit;
+                    font-size: 0.9em; min-width: 220px;
+                }
+                .mmc-toolbar select {
+                    padding: 6px 8px; border-radius: 3px;
+                    border: 1px solid rgba(255,255,255,0.15);
+                    background: rgba(30,30,30,0.95); color: inherit; font-size: 0.9em;
+                }
+                .mmc-toolbar button {
+                    padding: 6px 12px; border-radius: 3px;
+                    border: 1px solid rgba(255,255,255,0.2);
+                    background: rgba(255,255,255,0.07); color: inherit;
+                    font-size: 0.85em; cursor: pointer;
+                }
+                .mmc-toolbar button:hover { background: rgba(255,255,255,0.13); }
+
+                .mmc-group { border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 1em; overflow: hidden; }
+                .mmc-hdr {
+                    display: flex; align-items: center; gap: 10px;
+                    padding: 10px 14px; background: rgba(255,255,255,0.05); cursor: pointer;
+                }
+                .mmc-hdr:hover { background: rgba(255,255,255,0.09); }
+                .mmc-hdr-title { flex: 1; font-weight: 500; font-size: 0.95em; }
+                .mmc-hdr-meta  { font-size: 0.78em; opacity: 0.7; }
+                .mmc-badge { padding: 2px 8px; border-radius: 10px; font-weight: 500; font-size: 0.78em; }
+                .mmc-badge-tv    { background: rgba(0,164,220,0.2);   color: #7dd3fc; }
+                .mmc-badge-movie { background: rgba(168,85,247,0.2);  color: #d8b4fe; }
+
+                .mmc-body { overflow-x: auto; }
+                .mmc-body.collapsed { display: none; }
+
+                .mmc-season-hdr {
+                    padding: 5px 14px; background: rgba(0,0,0,0.2);
+                    font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7;
+                }
+
+                .mmc-table { width: 100%; border-collapse: collapse; font-size: 0.85em; min-width: 500px; }
+                .mmc-table th {
+                    padding: 6px 12px; text-align: left; background: rgba(0,0,0,0.15);
+                    font-size: 0.78em; font-weight: 500; text-transform: uppercase;
+                    letter-spacing: 0.04em; opacity: 0.65; white-space: nowrap;
+                }
+                .mmc-table td { padding: 7px 12px; border-top: 1px solid rgba(255,255,255,0.05); vertical-align: top; }
+                .mmc-table tr:hover td { background: rgba(255,255,255,0.02); }
+                .mmc-overview { opacity: 0.6; font-size: 0.9em; max-width: 360px; }
+                .mmc-tmdb-link { color: #00a4dc; text-decoration: none; }
+                .mmc-tmdb-link:hover { text-decoration: underline; }
+
+                .mmc-pager { display: flex; gap: 6px; align-items: center; margin-top: 1.2em; flex-wrap: wrap; }
+                .mmc-pager button {
+                    padding: 4px 10px; border-radius: 3px;
+                    border: 1px solid rgba(255,255,255,0.15);
+                    background: rgba(255,255,255,0.05); color: inherit;
+                    cursor: pointer; font-size: 0.85em; min-width: 32px;
+                }
+                .mmc-pager button:disabled { opacity: 0.3; cursor: default; }
+                .mmc-pager button.cur { background: #00a4dc; border-color: #00a4dc; color: #fff; }
+                .mmc-pager .pinfo { font-size: 0.82em; opacity: 0.55; }
+
+                .mmc-empty { text-align: center; padding: 3em; opacity: 0.5; }
+                .mmc-load  { text-align: center; padding: 3em; opacity: 0.6; }
+                .mmc-err   { padding: 1em; color: #f87171; }
+
+                .mmc-progress-track { background: rgba(255,255,255,0.1); border-radius: 3px; height: 8px; overflow: hidden; }
+                .mmc-progress-bar   { height: 100%; width: 0%; background: #00a4dc; transition: width 0.5s ease; }
+            </style>
+
+            <div class="verticalSection">
+                <h2 class="sectionTitle">Missing Media Checker</h2>
+                <p>Compares your Jellyfin library against TMDB to find missing TV episodes and collection movies.</p>
+            </div>
+
+            <div class="mmc-tabs">
+                <button type="button" class="mmc-tab active" data-tab="settings">Settings &amp; Scan</button>
+                <button type="button" class="mmc-tab" data-tab="report">Report</button>
+            </div>
+
+            <!-- ══ Settings & Scan ══════════════════════════════════════════════ -->
+            <div class="mmc-panel" data-panel="settings">
+
+                <div class="verticalSection">
+                    <h3 class="sectionTitle">TMDB API</h3>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="mmcApiKey">TMDB API Key (v3)</label>
+                        <input type="text" id="mmcApiKey" class="emby-input" autocomplete="off"
+                               placeholder="Paste your TMDB API key here…">
+                        <div class="fieldDescription">
+                            Get a free key at
+                            <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color:#00a4dc">
+                                themoviedb.org/settings/api</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="verticalSection">
+                    <h3 class="sectionTitle">What to check</h3>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" id="mmcCheckTv" is="emby-checkbox">
+                            <span>Check TV series for missing episodes</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" id="mmcCheckCol" is="emby-checkbox">
+                            <span>Check movie collections for missing films</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="verticalSection">
+                    <h3 class="sectionTitle">Filters</h3>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" id="mmcSpecials" is="emby-checkbox">
+                            <span>Include Season 0 / Specials</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" id="mmcSkipUnaired" is="emby-checkbox">
+                            <span>Skip episodes that have not aired yet</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" id="mmcSkipFuture" is="emby-checkbox">
+                            <span>Skip collection movies not yet released</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="verticalSection">
+                    <button is="emby-button" type="button" class="raised button-submit" id="mmcSaveBtn">
+                        <span>Save Settings</span>
+                    </button>
+                </div>
+
+                <div class="verticalSection">
+                    <h3 class="sectionTitle">Scan Library</h3>
+                    <p>The scan also runs automatically (Dashboard → Scheduled Tasks → Missing Media Checker).</p>
+                    <button is="emby-button" type="button" class="raised" id="mmcScanBtn">
+                        <span>Scan Now</span>
+                    </button>
+
+                    <div id="mmcProgress" style="display:none; margin-top:1.2em;">
+                        <p id="mmcProgressMsg" style="margin:0 0 0.4em; font-size:0.9em;"></p>
+                        <div class="mmc-progress-track">
+                            <div id="mmcProgressBar" class="mmc-progress-bar"></div>
+                        </div>
+                    </div>
+
+                    <div id="mmcDone" style="display:none; margin-top:1em;">
+                        ✓ Scan complete —
+                        <a href="#" id="mmcViewReport" style="color:#00a4dc">view report</a>
+                    </div>
+                </div>
+
+                <div class="verticalSection">
+                    <h3 class="sectionTitle">Last Scan</h3>
+                    <p id="mmcLastScan" style="opacity:0.7">No scan results yet.</p>
+                </div>
+
+            </div><!-- /settings panel -->
+
+            <!-- ══ Report ══════════════════════════════════════════════════════ -->
+            <div class="mmc-panel" data-panel="report" style="display:none;">
+
+                <div id="mmcRepLoad" class="mmc-load">Loading results…</div>
+                <div id="mmcRepErr"  class="mmc-err"  style="display:none;"></div>
+
+                <div id="mmcRepMain" style="display:none;">
+
+                    <div class="mmc-summary" id="mmcSummary"></div>
+
+                    <div class="mmc-toolbar">
+                        <input type="text"  id="mmcFilter"     placeholder="Filter by name…">
+                        <select id="mmcFilterType">
+                            <option value="all">All types</option>
+                            <option value="tv">TV series only</option>
+                            <option value="movie">Collections only</option>
+                        </select>
+                        <select id="mmcPageSize">
+                            <option value="25">25 per page</option>
+                            <option value="50" selected>50 per page</option>
+                            <option value="100">100 per page</option>
+                            <option value="0">All</option>
+                        </select>
+                        <button id="mmcExpandAll">Expand all</button>
+                        <button id="mmcCollapseAll">Collapse all</button>
+                    </div>
+
+                    <div id="mmcGroups"></div>
+                    <div class="mmc-pager" id="mmcPager"></div>
+
+                </div>
+
+            </div><!-- /report panel -->
+
+        </div><!-- /content-primary -->
+    </div><!-- /data-role=content -->
+
+<script type="text/javascript">
+(function () {
+    'use strict';
+    console.log('[MissingMediaChecker] script start');
+
+    // ── Globals ────────────────────────────────────────────────────────────────
+    var PLUGIN_ID  = null;
+    var pluginIdP  = null;
+    var pollTimer  = null;
+    var allGroups  = [];
+    var filtered   = [];
+    var page       = 1;
+    var filterTimer = null;
+    var reportLoaded = false;
+
+    // ── Plugin ID resolution ───────────────────────────────────────────────────
+    function getPluginId() {
+        if (PLUGIN_ID) return Promise.resolve(PLUGIN_ID);
+        if (pluginIdP) return pluginIdP;
+        pluginIdP = apiGet('Plugins').then(function (plugins) {
+            var match = (plugins || []).find(function (p) {
+                return p && (p.Name === 'MissingMediaChecker' || p.name === 'MissingMediaChecker');
+            });
+            if (!match) throw new Error('MissingMediaChecker plugin not found');
+            PLUGIN_ID = match.Id || match.id;
+            return PLUGIN_ID;
+        });
+        return pluginIdP;
+    }
+
+    // ── API helpers ────────────────────────────────────────────────────────────
+    function apiGet(path) {
+        return ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl(path), dataType: 'json' });
+    }
+    function apiPost(path) {
+        return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl(path) });
+    }
+
+    // ── DOM references ─────────────────────────────────────────────────────────
+    var pageEl = document.getElementById('MissingMediaCheckerPage');
+    if (!pageEl) { console.error('[MissingMediaChecker] #MissingMediaCheckerPage not found'); return; }
+
+    function qs(sel) { return pageEl.querySelector(sel); }
+
+    // ── Tab switching ──────────────────────────────────────────────────────────
+    function showTab(name) {
+        pageEl.querySelectorAll('.mmc-tab').forEach(function (t) {
+            t.classList.toggle('active', t.getAttribute('data-tab') === name);
+        });
+        pageEl.querySelectorAll('.mmc-panel').forEach(function (p) {
+            p.style.display = p.getAttribute('data-panel') === name ? '' : 'none';
+        });
+        if (name === 'report') loadReport();
+    }
+
+    // ── Event delegation ───────────────────────────────────────────────────────
+    pageEl.addEventListener('click', function (ev) {
+        var t = ev.target;
+        var tab = t.closest && t.closest('.mmc-tab');
+        if (tab) { showTab(tab.getAttribute('data-tab')); return; }
+        if (t.closest && t.closest('#mmcSaveBtn'))     { ev.preventDefault(); doSave();  return; }
+        if (t.closest && t.closest('#mmcScanBtn'))     { ev.preventDefault(); doScan();  return; }
+        if (t.closest && t.closest('#mmcViewReport'))  { ev.preventDefault(); reportLoaded = false; showTab('report'); return; }
+        if (t.closest && t.closest('#mmcExpandAll'))   { pageEl.querySelectorAll('.mmc-body').forEach(function (b) { b.classList.remove('collapsed'); }); return; }
+        if (t.closest && t.closest('#mmcCollapseAll')) { pageEl.querySelectorAll('.mmc-body').forEach(function (b) { b.classList.add('collapsed');    }); return; }
+    });
+
+    pageEl.addEventListener('input', function (ev) {
+        if (ev.target && ev.target.id === 'mmcFilter') {
+            clearTimeout(filterTimer);
+            filterTimer = setTimeout(applyFilter, 250);
+        }
+    });
+    pageEl.addEventListener('change', function (ev) {
+        if (!ev.target) return;
+        if (ev.target.id === 'mmcFilterType') { applyFilter(); return; }
+        if (ev.target.id === 'mmcPageSize')   { page = 1; render(); return; }
+    });
+
+    // ── Settings load / save ───────────────────────────────────────────────────
+    function loadSettings() {
+        getPluginId().then(function (id) {
+            return ApiClient.getPluginConfiguration(id);
+        }).then(function (cfg) {
+            qs('#mmcApiKey').value        = cfg.TmdbApiKey           || '';
+            qs('#mmcCheckTv').checked     = cfg.CheckTvSeries        !== false;
+            qs('#mmcCheckCol').checked    = cfg.CheckMovieCollections !== false;
+            qs('#mmcSpecials').checked    = !!cfg.IncludeSpecials;
+            qs('#mmcSkipUnaired').checked = cfg.SkipUnairedEpisodes  !== false;
+            qs('#mmcSkipFuture').checked  = cfg.SkipFutureMovies     !== false;
+        }).catch(function (err) {
+            console.error('[MissingMediaChecker] loadSettings failed', err);
+        });
+    }
+
+    function doSave() {
+        var pid;
+        getPluginId().then(function (id) {
+            pid = id;
+            return ApiClient.getPluginConfiguration(id);
+        }).then(function (cfg) {
+            cfg.TmdbApiKey            = qs('#mmcApiKey').value.trim();
+            cfg.CheckTvSeries         = qs('#mmcCheckTv').checked;
+            cfg.CheckMovieCollections = qs('#mmcCheckCol').checked;
+            cfg.IncludeSpecials       = qs('#mmcSpecials').checked;
+            cfg.SkipUnairedEpisodes   = qs('#mmcSkipUnaired').checked;
+            cfg.SkipFutureMovies      = qs('#mmcSkipFuture').checked;
+            return ApiClient.updatePluginConfiguration(pid, cfg);
+        }).then(function (result) {
+            if (typeof Dashboard !== 'undefined' && Dashboard.processPluginConfigurationUpdateResult) {
+                Dashboard.processPluginConfigurationUpdateResult(result);
+            } else {
+                Dashboard.alert('Settings saved.');
+            }
+        }).catch(function (err) {
+            Dashboard.alert('Save failed: ' + (err && err.status ? 'HTTP ' + err.status : String(err)));
+        });
+    }
+
+    // ── Scan & polling ─────────────────────────────────────────────────────────
+    function doScan() {
+        qs('#mmcScanBtn').disabled        = true;
+        qs('#mmcDone').style.display      = 'none';
+        qs('#mmcProgress').style.display  = 'block';
+        qs('#mmcProgressBar').style.width = '0%';
+        qs('#mmcProgressMsg').textContent = 'Starting…';
+
+        apiPost('MissingMedia/Scan').then(function () {
+            setTimeout(startPolling, 800);
+        }).catch(function (err) {
+            qs('#mmcScanBtn').disabled       = false;
+            qs('#mmcProgress').style.display = 'none';
+            Dashboard.alert('Failed to start scan. Check server logs.\n' + JSON.stringify(err));
+        });
+    }
+
+    function startPolling() {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(poll, 1500);
+    }
+
+    function poll() {
+        apiGet('MissingMedia/Status').then(function (data) {
+            if (!data || !data.isScanning) {
+                clearInterval(pollTimer); pollTimer = null;
+                qs('#mmcProgress').style.display = 'none';
+                qs('#mmcScanBtn').disabled        = false;
+                qs('#mmcDone').style.display      = 'block';
+                reportLoaded = false;
+                refreshLastScan();
+                return;
+            }
+            qs('#mmcProgressBar').style.width = (data.percentComplete || 0) + '%';
+            qs('#mmcProgressMsg').textContent = (data.message || '') +
+                ' (' + Math.round(data.percentComplete || 0) + '%)';
+        }).catch(function () {});
+    }
+
+    function refreshLastScan() {
+        apiGet('MissingMedia/Status').then(function (s) {
+            if (s && s.lastRunAt) {
+                qs('#mmcLastScan').textContent = 'Last scan: ' + new Date(s.lastRunAt).toLocaleString();
+            }
+            if (s && s.isScanning) {
+                qs('#mmcScanBtn').disabled       = true;
+                qs('#mmcProgress').style.display = 'block';
+                startPolling();
+            }
+        }).catch(function () {});
+    }
+
+    // ── Report ─────────────────────────────────────────────────────────────────
+    function loadReport() {
+        if (reportLoaded) return;
+        reportLoaded = true;
+
+        qs('#mmcRepLoad').style.display = 'block';
+        qs('#mmcRepErr').style.display  = 'none';
+        qs('#mmcRepMain').style.display = 'none';
+
+        apiGet('MissingMedia/Results').then(function (data) {
+            qs('#mmcRepLoad').style.display = 'none';
+
+            if (!data) {
+                showRepErr('No scan results yet — run a scan from the Settings tab.');
+                return;
+            }
+
+            // Summary cards
+            qs('#mmcSummary').innerHTML =
+                card(data.totalSeriesChecked      || 0, 'series checked',          false) +
+                card(data.totalCollectionsChecked || 0, 'collections checked',     false) +
+                card(data.seriesWithMissing       || 0, 'series incomplete',       (data.seriesWithMissing       || 0) > 0) +
+                card(data.collectionsWithMissing  || 0, 'incomplete collections',  (data.collectionsWithMissing  || 0) > 0) +
+                card(data.totalMissingEpisodes    || 0, 'missing episodes',        (data.totalMissingEpisodes    || 0) > 0) +
+                card(data.totalMissingMovies      || 0, 'missing movies',          (data.totalMissingMovies      || 0) > 0);
+
+            allGroups = [];
+            (data.missingSeries || []).forEach(function (s) {
+                if ((s.missingCount || 0) > 0)
+                    allGroups.push({ type: 'tv', name: s.seriesName || '', data: s });
+            });
+            (data.missingCollections || []).forEach(function (c) {
+                if ((c.missingCount || 0) > 0)
+                    allGroups.push({ type: 'movie', name: c.collectionName || '', data: c });
+            });
+
+            qs('#mmcRepMain').style.display = 'block';
+            applyFilter();
+
+        }).catch(function (err) {
+            qs('#mmcRepLoad').style.display = 'none';
+            showRepErr('Failed to load results (' +
+                (err && err.status ? 'HTTP ' + err.status : String(err)) + ')');
+        });
+    }
+
+    function card(num, lbl, warn) {
+        return '<div class="mmc-card">' +
+            '<div class="mmc-card-num' + (warn ? ' warn' : '') + '">' + num + '</div>' +
+            '<div class="mmc-card-lbl">' + esc(lbl) + '</div>' +
+            '</div>';
+    }
+
+    function showRepErr(msg) {
+        var el = qs('#mmcRepErr');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    // ── Filter & pagination ────────────────────────────────────────────────────
+    function applyFilter() {
+        var text = (qs('#mmcFilter').value || '').toLowerCase().trim();
+        var type = qs('#mmcFilterType').value || 'all';
+        filtered = allGroups.filter(function (g) {
+            if (type !== 'all' && g.type !== type) return false;
+            if (text && g.name.toLowerCase().indexOf(text) === -1) return false;
+            return true;
+        });
+        page = 1;
+        render();
+    }
+
+    function getPageSize() {
+        var v = parseInt(qs('#mmcPageSize').value || '50', 10);
+        return v === 0 ? Math.max(filtered.length, 1) : v;
+    }
+
+    function render() {
+        var ps    = getPageSize();
+        var pages = Math.max(1, Math.ceil(filtered.length / ps));
+        page      = Math.min(Math.max(page, 1), pages);
+
+        var start = (page - 1) * ps;
+        var slice = filtered.slice(start, start + ps);
+
+        var box = qs('#mmcGroups');
+        box.innerHTML = '';
+        if (slice.length === 0) {
+            box.innerHTML = '<div class="mmc-empty">No results match the current filter.</div>';
+        } else {
+            slice.forEach(function (g) {
+                box.appendChild(g.type === 'tv'
+                    ? makeSeriesGroup(g.data)
+                    : makeCollectionGroup(g.data));
+            });
+        }
+        renderPager(pages, ps);
+    }
+
+    // ── Group builders ─────────────────────────────────────────────────────────
+    function makeSeriesGroup(series) {
+        var tmdbUrl = 'https://www.themoviedb.org/tv/' + series.tmdbId;
+
+        var bySeason = {};
+        (series.missingEpisodes || []).forEach(function (ep) {
+            var sn = ep.seasonNumber;
+            if (!bySeason[sn]) bySeason[sn] = [];
+            bySeason[sn].push(ep);
+        });
+
+        var bodyHtml = '';
+        Object.keys(bySeason).sort(function (a, b) { return +a - +b; }).forEach(function (sn) {
+            var eps = bySeason[sn];
+            bodyHtml += '<div class="mmc-season-hdr">Season ' + sn +
+                        ' &mdash; ' + eps.length + ' missing</div>';
+            bodyHtml += '<table class="mmc-table"><thead><tr>' +
+                '<th>Episode</th><th>Title</th><th>Air Date</th><th>Overview</th><th>TMDB</th>' +
+                '</tr></thead><tbody>';
+            eps.forEach(function (ep) {
+                var epUrl = 'https://www.themoviedb.org/tv/' + series.tmdbId +
+                            '/season/' + ep.seasonNumber + '/episode/' + ep.episodeNumber;
+                bodyHtml +=
+                    '<tr>' +
+                    '<td style="white-space:nowrap">S' + pad(ep.seasonNumber) + 'E' + pad(ep.episodeNumber) + '</td>' +
+                    '<td>' + esc(ep.episodeName || '&mdash;') + '</td>' +
+                    '<td style="white-space:nowrap;opacity:.7">' + (ep.airDate || '&mdash;') + '</td>' +
+                    '<td class="mmc-overview">' + esc(ep.overview || '') + '</td>' +
+                    '<td><a class="mmc-tmdb-link" href="' + epUrl + '" target="_blank">&#8599;</a></td>' +
+                    '</tr>';
+            });
+            bodyHtml += '</tbody></table>';
+        });
+
+        return makeGroup(
+            '<span class="mmc-badge mmc-badge-tv">TV</span>',
+            '<a class="mmc-tmdb-link" href="' + tmdbUrl + '" target="_blank">' + esc(series.seriesName) + '</a>',
+            series.missingCount + ' missing / ' + series.totalEpisodesOnTmdb + ' on TMDB',
+            bodyHtml
+        );
+    }
+
+    function makeCollectionGroup(col) {
+        var colUrl   = 'https://www.themoviedb.org/collection/' + col.tmdbCollectionId;
+        var bodyHtml = '<table class="mmc-table"><thead><tr>' +
+            '<th>Title</th><th>Year</th><th>Rating</th><th>Overview</th><th>TMDB</th>' +
+            '</tr></thead><tbody>';
+
+        (col.missingMovies || []).forEach(function (m) {
+            var mUrl   = 'https://www.themoviedb.org/movie/' + m.tmdbId;
+            var rating = m.voteAverage ? '&#9733; ' + (+m.voteAverage).toFixed(1) : '&mdash;';
+            bodyHtml +=
+                '<tr>' +
+                '<td><strong>' + esc(m.title) + '</strong></td>' +
+                '<td style="white-space:nowrap;opacity:.7">' + (m.year || '&mdash;') + '</td>' +
+                '<td style="white-space:nowrap;opacity:.7">' + rating + '</td>' +
+                '<td class="mmc-overview">' + esc(m.overview || '') + '</td>' +
+                '<td><a class="mmc-tmdb-link" href="' + mUrl + '" target="_blank">&#8599;</a></td>' +
+                '</tr>';
+        });
+        bodyHtml += '</tbody></table>';
+
+        return makeGroup(
+            '<span class="mmc-badge mmc-badge-movie">Collection</span>',
+            '<a class="mmc-tmdb-link" href="' + colUrl + '" target="_blank">' + esc(col.collectionName) + '</a>',
+            col.missingCount + ' missing / ' + col.totalMoviesInCollection + ' in collection',
+            bodyHtml
+        );
+    }
+
+    function makeGroup(badge, title, meta, bodyHtml) {
+        var wrap = document.createElement('div');
+        wrap.className = 'mmc-group';
+
+        var hdr = document.createElement('div');
+        hdr.className = 'mmc-hdr';
+        hdr.innerHTML = badge +
+            '<span class="mmc-hdr-title">' + title + '</span>' +
+            '<span class="mmc-hdr-meta">'  + meta  + '</span>';
+
+        var body = document.createElement('div');
+        body.className = 'mmc-body collapsed';
+        body.innerHTML = bodyHtml;
+
+        hdr.addEventListener('click', function () { body.classList.toggle('collapsed'); });
+        wrap.appendChild(hdr);
+        wrap.appendChild(body);
+        return wrap;
+    }
+
+    // ── Pagination ─────────────────────────────────────────────────────────────
+    function renderPager(pages, ps) {
+        var pager = qs('#mmcPager');
+        pager.innerHTML = '';
+        if (pages <= 1) return;
+
+        var s    = (page - 1) * ps + 1;
+        var e    = Math.min(page * ps, filtered.length);
+        var info = document.createElement('span');
+        info.className   = 'pinfo';
+        info.textContent = s + '\u2013' + e + ' of ' + filtered.length;
+        pager.appendChild(info);
+
+        function btn(label, target) {
+            var b = document.createElement('button');
+            b.textContent = label;
+            if (target < 1 || target > pages) { b.disabled = true; }
+            if (target === page) { b.className = 'cur'; }
+            b.addEventListener('click', function () { page = target; render(); window.scrollTo(0, 0); });
+            return b;
+        }
+        pager.appendChild(btn('\u2039', page - 1));
+        var lo = Math.max(1, page - 2), hi = Math.min(pages, page + 2);
+        for (var p = lo; p <= hi; p++) pager.appendChild(btn(String(p), p));
+        pager.appendChild(btn('\u203a', page + 1));
+    }
+
+    // ── Utilities ──────────────────────────────────────────────────────────────
+    function esc(s) {
+        return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+    // ── Boot ───────────────────────────────────────────────────────────────────
+    loadSettings();
+    refreshLastScan();
+
+}());
+</script>
+
+</div><!-- /MissingMediaCheckerPage -->
+</body>
+</html>
