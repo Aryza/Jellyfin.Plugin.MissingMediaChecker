@@ -17,8 +17,12 @@ public class ScanLibraryTask : IScheduledTask
 {
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
-        WriteIndented        = false,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        WriteIndented               = false,
+        PropertyNamingPolicy        = JsonNamingPolicy.CamelCase,
+        // [JsonPropertyName] attributes on the model take priority over the
+        // naming policy, so reading back the camelCase disk file works correctly
+        // even without this flag — but it is cheap insurance.
+        PropertyNameCaseInsensitive = true
     };
 
     // Shared state polled by the API controller.

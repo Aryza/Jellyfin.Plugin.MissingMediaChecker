@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Jellyfin.Plugin.MissingMediaChecker.Models;
 
@@ -7,61 +8,61 @@ namespace Jellyfin.Plugin.MissingMediaChecker.Models;
 
 public class MissingEpisode
 {
-    public int     SeasonNumber  { get; set; }
-    public int     EpisodeNumber { get; set; }
-    public string? EpisodeName   { get; set; }
-    public string? AirDate       { get; set; }
-    public string? Overview      { get; set; }
-    public int     TmdbId        { get; set; }
+    [JsonPropertyName("seasonNumber")]  public int     SeasonNumber  { get; set; }
+    [JsonPropertyName("episodeNumber")] public int     EpisodeNumber { get; set; }
+    [JsonPropertyName("episodeName")]   public string? EpisodeName   { get; set; }
+    [JsonPropertyName("airDate")]       public string? AirDate       { get; set; }
+    [JsonPropertyName("overview")]      public string? Overview      { get; set; }
+    [JsonPropertyName("tmdbId")]        public int     TmdbId        { get; set; }
 }
 
 public class SeriesMissingReport
 {
-    public string  SeriesName              { get; set; } = string.Empty;
-    public Guid    JellyfinId              { get; set; }
-    public string? TmdbId                  { get; set; }
-    public int     TotalEpisodesOnTmdb     { get; set; }
-    public int     TotalEpisodesInLibrary  { get; set; }
-    public int     MissingCount            { get; set; }
-    public List<MissingEpisode> MissingEpisodes { get; set; } = new();
+    [JsonPropertyName("seriesName")]             public string  SeriesName             { get; set; } = string.Empty;
+    [JsonPropertyName("jellyfinId")]             public Guid    JellyfinId             { get; set; }
+    [JsonPropertyName("tmdbId")]                 public string? TmdbId                 { get; set; }
+    [JsonPropertyName("totalEpisodesOnTmdb")]    public int     TotalEpisodesOnTmdb    { get; set; }
+    [JsonPropertyName("totalEpisodesInLibrary")] public int     TotalEpisodesInLibrary { get; set; }
+    [JsonPropertyName("missingCount")]           public int     MissingCount           { get; set; }
+    [JsonPropertyName("missingEpisodes")]        public List<MissingEpisode> MissingEpisodes { get; set; } = new();
 }
 
 // ── Movies / Collections ─────────────────────────────────────────────────────
 
 public class MissingMovie
 {
-    public string  Title        { get; set; } = string.Empty;
-    public string? ReleaseDate  { get; set; }
-    public int?    Year         { get; set; }
-    public string? Overview     { get; set; }
-    public string? PosterPath   { get; set; }
-    public int     TmdbId       { get; set; }
-    public double  VoteAverage  { get; set; }
+    [JsonPropertyName("title")]       public string  Title       { get; set; } = string.Empty;
+    [JsonPropertyName("releaseDate")] public string? ReleaseDate { get; set; }
+    [JsonPropertyName("year")]        public int?    Year        { get; set; }
+    [JsonPropertyName("overview")]    public string? Overview    { get; set; }
+    [JsonPropertyName("posterPath")]  public string? PosterPath  { get; set; }
+    [JsonPropertyName("tmdbId")]      public int     TmdbId      { get; set; }
+    [JsonPropertyName("voteAverage")] public double  VoteAverage { get; set; }
 }
 
 public class CollectionMissingReport
 {
-    public string CollectionName         { get; set; } = string.Empty;
-    public int    TmdbCollectionId       { get; set; }
-    public int    TotalMoviesInCollection { get; set; }
-    public int    MoviesInLibrary        { get; set; }
-    public int    MissingCount           { get; set; }
-    public List<MissingMovie> MissingMovies { get; set; } = new();
+    [JsonPropertyName("collectionName")]          public string CollectionName          { get; set; } = string.Empty;
+    [JsonPropertyName("tmdbCollectionId")]         public int    TmdbCollectionId        { get; set; }
+    [JsonPropertyName("totalMoviesInCollection")]  public int    TotalMoviesInCollection { get; set; }
+    [JsonPropertyName("moviesInLibrary")]          public int    MoviesInLibrary         { get; set; }
+    [JsonPropertyName("missingCount")]             public int    MissingCount            { get; set; }
+    [JsonPropertyName("missingMovies")]            public List<MissingMovie> MissingMovies { get; set; } = new();
 }
 
 // ── Top-level scan result ─────────────────────────────────────────────────────
 
 public class ScanResults
 {
-    public DateTimeOffset ScanTime                { get; set; }
-    public int            TotalSeriesInLibrary    { get; set; }
-    public int            TotalSeriesChecked      { get; set; }
-    public int            SeriesSkippedNoId       { get; set; }
-    public int            TotalCollectionsChecked { get; set; }
-    public int            SeriesWithMissing       { get; set; }
-    public int            CollectionsWithMissing  { get; set; }
-    public int            TotalMissingEpisodes    { get; set; }
-    public int            TotalMissingMovies      { get; set; }
-    public List<SeriesMissingReport>    MissingSeries      { get; set; } = new();
-    public List<CollectionMissingReport> MissingCollections { get; set; } = new();
+    [JsonPropertyName("scanTime")]                public DateTimeOffset ScanTime                { get; set; }
+    [JsonPropertyName("totalSeriesInLibrary")]     public int            TotalSeriesInLibrary    { get; set; }
+    [JsonPropertyName("totalSeriesChecked")]       public int            TotalSeriesChecked      { get; set; }
+    [JsonPropertyName("seriesSkippedNoId")]        public int            SeriesSkippedNoId       { get; set; }
+    [JsonPropertyName("totalCollectionsChecked")]  public int            TotalCollectionsChecked { get; set; }
+    [JsonPropertyName("seriesWithMissing")]        public int            SeriesWithMissing       { get; set; }
+    [JsonPropertyName("collectionsWithMissing")]   public int            CollectionsWithMissing  { get; set; }
+    [JsonPropertyName("totalMissingEpisodes")]     public int            TotalMissingEpisodes    { get; set; }
+    [JsonPropertyName("totalMissingMovies")]       public int            TotalMissingMovies      { get; set; }
+    [JsonPropertyName("missingSeries")]            public List<SeriesMissingReport>     MissingSeries      { get; set; } = new();
+    [JsonPropertyName("missingCollections")]       public List<CollectionMissingReport> MissingCollections { get; set; } = new();
 }
