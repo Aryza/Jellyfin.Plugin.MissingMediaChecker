@@ -27,6 +27,7 @@ public class ScanLibraryTask : IScheduledTask
     internal static bool             IsScanning     { get; private set; }
     internal static double           ProgressPct    { get; private set; }
     internal static string           ProgressMsg    { get; private set; } = string.Empty;
+    internal static string?          LastError      { get; private set; }
 
     private readonly ILibraryManager         _library;
     private readonly ILogger<ScanLibraryTask> _logger;
@@ -56,6 +57,7 @@ public class ScanLibraryTask : IScheduledTask
         }
 
         IsScanning  = true;
+        LastError   = null;
         ProgressPct = 0;
         ProgressMsg = "Starting…";
 
@@ -80,6 +82,12 @@ public class ScanLibraryTask : IScheduledTask
                 ct).ConfigureAwait(false);
 
             Commit(results);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            LastError = ex.Message;
+            _logger.LogError(ex, "MissingMediaChecker scan failed");
+            throw;
         }
         finally
         {

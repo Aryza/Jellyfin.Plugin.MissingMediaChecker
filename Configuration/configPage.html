@@ -203,6 +203,17 @@
                     <p id="mmcLastScan" style="opacity:0.7">No scan results yet.</p>
                 </div>
 
+                <div class="verticalSection">
+                    <h3 class="sectionTitle">Diagnostics</h3>
+                    <p style="opacity:0.7;font-size:0.9em;">Checks your configuration and library without running a TMDB scan.</p>
+                    <button is="emby-button" type="button" class="raised" id="mmcDiagBtn">
+                        <span>Run Diagnostics</span>
+                    </button>
+                    <pre id="mmcDiagOut" style="display:none;margin-top:1em;padding:1em;
+                         background:rgba(0,0,0,0.3);border-radius:4px;font-size:0.82em;
+                         white-space:pre-wrap;word-break:break-word;"></pre>
+                </div>
+
             </div><!-- /settings panel -->
 
             <!-- ══ Report ══════════════════════════════════════════════════════ -->
@@ -307,6 +318,7 @@
         if (t.closest && t.closest('#mmcViewReport'))  { ev.preventDefault(); reportLoaded = false; showTab('report'); return; }
         if (t.closest && t.closest('#mmcExpandAll'))   { pageEl.querySelectorAll('.mmc-body').forEach(function (b) { b.classList.remove('collapsed'); }); return; }
         if (t.closest && t.closest('#mmcCollapseAll')) { pageEl.querySelectorAll('.mmc-body').forEach(function (b) { b.classList.add('collapsed');    }); return; }
+        if (t.closest && t.closest('#mmcDiagBtn'))     { ev.preventDefault(); doDiag(); return; }
     });
 
     pageEl.addEventListener('input', function (ev) {
@@ -640,6 +652,36 @@
         return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
     function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+    // ── Diagnostics ────────────────────────────────────────────────────────────
+    function doDiag() {
+        var btn = qs('#mmcDiagBtn');
+        var out = qs('#mmcDiagOut');
+        btn.disabled = true;
+        out.style.display = 'block';
+        out.textContent = 'Running…';
+
+        apiGet('MissingMedia/Debug').then(function (d) {
+            var lines = [
+                'Plugin loaded:               ' + d.pluginInstanceLoaded,
+                'API key configured:          ' + d.apiKeyConfigured,
+                'Check TV series:             ' + d.checkTvSeries,
+                'Check movie collections:     ' + d.checkMovieCollections,
+                '─────────────────────────────────────',
+                'Series in library:           ' + d.seriesInLibrary,
+                'Physical episodes:           ' + d.physicalEpisodesInLibrary,
+                'Movies in library:           ' + d.moviesInLibrary,
+                '─────────────────────────────────────',
+                'Last scan:                   ' + (d.lastScanTime ? new Date(d.lastScanTime).toLocaleString() : 'never'),
+                'Last error:                  ' + (d.lastError || 'none'),
+            ];
+            out.textContent = lines.join('\n');
+        }).catch(function (err) {
+            out.textContent = 'Diagnostics failed: ' + JSON.stringify(err);
+        }).finally(function () {
+            btn.disabled = false;
+        });
+    }
 
     // ── Boot ───────────────────────────────────────────────────────────────────
     loadSettings();

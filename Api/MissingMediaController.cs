@@ -1,9 +1,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.MissingMediaChecker.Configuration;
 using Jellyfin.Plugin.MissingMediaChecker.Models;
 using Jellyfin.Plugin.MissingMediaChecker.ScheduledTasks;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,8 +44,50 @@ public class MissingMediaController : ControllerBase
             isScanning      = ScanLibraryTask.IsScanning,
             percentComplete = ScanLibraryTask.ProgressPct,
             message         = ScanLibraryTask.ProgressMsg,
-            lastRunAt       = ScanLibraryTask.LastRunAt?.ToString("O")
+            lastRunAt       = ScanLibraryTask.LastRunAt?.ToString("O"),
+            lastError       = ScanLibraryTask.LastError
         });
+
+    // ── GET /MissingMedia/Debug ───────────────────────────────────────────────
+
+    [HttpGet("Debug")]
+    public ActionResult GetDebug()
+    {
+        var cfg = Plugin.Instance?.Configuration ?? new PluginConfiguration();
+
+        var seriesCount = _library.GetItemList(new InternalItemsQuery
+        {
+            IncludeItemTypes = new[] { BaseItemKind.Series },
+            Recursive        = true
+        }).Count;
+
+        var movieCount = _library.GetItemList(new InternalItemsQuery
+        {
+            IncludeItemTypes = new[] { BaseItemKind.Movie },
+            Recursive        = true,
+            IsVirtualItem    = false
+        }).Count;
+
+        var episodeCount = _library.GetItemList(new InternalItemsQuery
+        {
+            IncludeItemTypes = new[] { BaseItemKind.Episode },
+            Recursive        = true,
+            IsVirtualItem    = false
+        }).Count;
+
+        return Ok(new
+        {
+            pluginInstanceLoaded    = Plugin.Instance is not null,
+            apiKeyConfigured        = !string.IsNullOrWhiteSpace(cfg.TmdbApiKey),
+            checkTvSeries           = cfg.CheckTvSeries,
+            checkMovieCollections   = cfg.CheckMovieCollections,
+            seriesInLibrary         = seriesCount,
+            moviesInLibrary         = movieCount,
+            physicalEpisodesInLibrary = episodeCount,
+            lastScanTime            = ScanLibraryTask.LastRunAt?.ToString("O"),
+            lastError               = ScanLibraryTask.LastError
+        });
+    }
 
     // ── POST /MissingMedia/Scan ───────────────────────────────────────────────
 

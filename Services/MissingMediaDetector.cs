@@ -115,6 +115,8 @@ public class MissingMediaDetector
         // so series overlap their I/O waits instead of queuing behind each other.
         var seriesTasks = allSeries.Select(async series =>
         {
+            try
+            {
             ct.ThrowIfCancellationRequested();
 
             string? tmdbId;
@@ -232,6 +234,12 @@ public class MissingMediaDetector
             });
 
             _logger.LogDebug("Series {Name}: {N} missing episodes", series.Name, missing.Count);
+            } // end try
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Series {Name}: unexpected error, skipping", series.Name);
+                Interlocked.Increment(ref done_);
+            }
         });
 
         await Task.WhenAll(seriesTasks).ConfigureAwait(false);
