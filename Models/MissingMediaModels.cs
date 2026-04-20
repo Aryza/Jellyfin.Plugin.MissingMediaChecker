@@ -54,7 +54,9 @@ public class CollectionMissingReport
 public class ScanResults
 {
     public DateTimeOffset ScanTime                { get; set; }
+    public int            TotalSeriesInLibrary    { get; set; }
     public int            TotalSeriesChecked      { get; set; }
+    public int            SeriesSkippedNoId       { get; set; }
     public int            TotalCollectionsChecked { get; set; }
     public int            SeriesWithMissing       { get; set; }
     public int            CollectionsWithMissing  { get; set; }

@@ -50,12 +50,14 @@ public class MissingMediaDetector
         if (checkSeries)
         {
             progress.Report((0, "Loading TV library…"));
-            var (reports, total) = await ScanSeriesAsync(
+            var (reports, total, inLib, skipped) = await ScanSeriesAsync(
                 tmdb, includeSpecials, skipUnaired,
                 pct => progress.Report((pct * half / 100, $"TV series: {pct:F0}%")), ct)
                 .ConfigureAwait(false);
 
+            results.TotalSeriesInLibrary = inLib;
             results.TotalSeriesChecked   = total;
+            results.SeriesSkippedNoId    = skipped;
             results.MissingSeries        = reports.Where(r => r.MissingCount > 0)
                                                    .OrderByDescending(r => r.MissingCount)
                                                    .ToList();
@@ -86,7 +88,7 @@ public class MissingMediaDetector
 
     // ── TV series scan ────────────────────────────────────────────────────────
 
-    private async Task<(List<SeriesMissingReport> reports, int totalChecked)> ScanSeriesAsync(
+    private async Task<(List<SeriesMissingReport> reports, int totalChecked, int totalInLibrary, int skippedNoId)> ScanSeriesAsync(
         TmdbService    tmdb,
         bool           includeSpecials,
         bool           skipUnaired,
@@ -130,22 +132,35 @@ public class MissingMediaDetector
                 set.Add((s, e));
         }
 
-        var today   = DateTime.UtcNow.Date;
-        var reports = new List<SeriesMissingReport>();
-        int checked_ = 0;
+        var today      = DateTime.UtcNow.Date;
+        var reportsBag = new ConcurrentBag<SeriesMissingReport>();
+        int checked_   = 0;
+        int skipped_   = 0;
+        int done_      = 0;
 
         using var tmdbSem = new SemaphoreSlim(ConcurrentTmdbRequests, ConcurrentTmdbRequests);
 
-        for (int i = 0; i < allSeries.Count; i++)
+        // Process all series concurrently. The semaphore throttles TMDB calls globally
+        // so series overlap their I/O waits instead of queuing behind each other.
+        var seriesTasks = allSeries.Select(async series =>
         {
             ct.ThrowIfCancellationRequested();
-            report((double)i / allSeries.Count * 100);
 
-            var series = allSeries[i];
-            if (!series.ProviderIds.TryGetValue("Tmdb", out var tmdbId) || string.IsNullOrEmpty(tmdbId))
-                continue;
+            string? tmdbId;
+            if (!series.ProviderIds.TryGetValue("Tmdb", out tmdbId) || string.IsNullOrEmpty(tmdbId))
+            {
+                tmdbId = await ResolveTmdbIdAsync(tmdb, series.ProviderIds, tmdbSem, ct)
+                    .ConfigureAwait(false);
+                if (string.IsNullOrEmpty(tmdbId))
+                {
+                    _logger.LogDebug("Series {Name}: no resolvable TMDB ID, skipping", series.Name);
+                    Interlocked.Increment(ref skipped_);
+                    report((double)Interlocked.Increment(ref done_) / allSeries.Count * 100);
+                    return;
+                }
+                _logger.LogDebug("Series {Name}: resolved TMDB ID {Id} via /find", series.Name, tmdbId);
+            }
 
-            // Fetch series header (season list + overall episode count).
             await tmdbSem.WaitAsync(ct).ConfigureAwait(false);
             TmdbSeriesDetails? tmdbSeries;
             try
@@ -155,20 +170,20 @@ public class MissingMediaDetector
             }
             finally { tmdbSem.Release(); }
 
-            if (tmdbSeries is null) continue;
-            checked_++;
+            report((double)Interlocked.Increment(ref done_) / allSeries.Count * 100);
 
+            if (tmdbSeries is null) return;
+            Interlocked.Increment(ref checked_);
+
+            // ownedBySeries is read-only after construction — safe for parallel reads.
             var owned = ownedBySeries.TryGetValue(series.Id, out var s2)
                 ? s2
                 : new HashSet<(int, int)>();
 
-            // Filter seasons we care about before spawning any tasks.
             var seasonsToScan = tmdbSeries.Seasons
                 .Where(s => includeSpecials || s.SeasonNumber != 0)
                 .ToList();
 
-            // Fetch all seasons for this series in parallel (semaphore-limited).
-            // A 5-season show goes from 5 × 150 ms = 750 ms → ceil(5/3) × 150 ms = 300 ms.
             var seasonTasks = seasonsToScan.Select(async seasonSummary =>
             {
                 await tmdbSem.WaitAsync(ct).ConfigureAwait(false);
@@ -193,9 +208,6 @@ public class MissingMediaDetector
                 foreach (var ep in seasonDetail.Episodes)
                 {
                     tmdbEpCount++;
-
-                    // Bug fix: only skip when skipUnaired is true. When false,
-                    // include all episodes regardless of whether they've aired.
                     if (skipUnaired && !HasAired(ep.AirDate, today)) continue;
 
                     if (!owned.Contains((ep.SeasonNumber, ep.EpisodeNumber)))
@@ -218,13 +230,11 @@ public class MissingMediaDetector
                     ? a.SeasonNumber.CompareTo(b.SeasonNumber)
                     : a.EpisodeNumber.CompareTo(b.EpisodeNumber));
 
-            reports.Add(new SeriesMissingReport
+            reportsBag.Add(new SeriesMissingReport
             {
-                SeriesName  = series.Name,
-                JellyfinId  = series.Id,
-                TmdbId      = tmdbId,
-                // Bug fix: use the episode count from the seasons we actually scanned,
-                // not tmdbSeries.NumberOfEpisodes which always includes specials.
+                SeriesName             = series.Name,
+                JellyfinId             = series.Id,
+                TmdbId                 = tmdbId,
                 TotalEpisodesOnTmdb    = tmdbEpCount,
                 TotalEpisodesInLibrary = owned.Count,
                 MissingCount           = missing.Count,
@@ -232,9 +242,15 @@ public class MissingMediaDetector
             });
 
             _logger.LogDebug("Series {Name}: {N} missing episodes", series.Name, missing.Count);
-        }
+        });
 
-        return (reports, checked_);
+        await Task.WhenAll(seriesTasks).ConfigureAwait(false);
+
+        _logger.LogInformation(
+            "MissingMediaChecker: series scan done — library={Lib}, checked={Checked}, skipped(noId)={Skipped}",
+            allSeries.Count, checked_, skipped_);
+
+        return (reportsBag.ToList(), checked_, allSeries.Count, skipped_);
     }
 
     // ── Collection / movie scan ───────────────────────────────────────────────
@@ -367,6 +383,42 @@ public class MissingMediaDetector
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
+
+    // Tries to resolve a TMDB series ID from TVDB or IMDB provider IDs via the /find endpoint.
+    // Returns null if neither source yields a result.
+    private static async Task<string?> ResolveTmdbIdAsync(
+        TmdbService                     tmdb,
+        IDictionary<string, string>     providerIds,
+        SemaphoreSlim                   sem,
+        CancellationToken               ct)
+    {
+        // Try TVDB first (most common for TV), then IMDB.
+        var candidates = new (string key, string source)[]
+        {
+            ("Tvdb", "tvdb_id"),
+            ("Imdb", "imdb_id"),
+        };
+
+        foreach (var (key, source) in candidates)
+        {
+            if (!providerIds.TryGetValue(key, out var extId) || string.IsNullOrEmpty(extId))
+                continue;
+
+            await sem.WaitAsync(ct).ConfigureAwait(false);
+            TmdbFindResult? found;
+            try
+            {
+                await Task.Delay(RateDelay, ct).ConfigureAwait(false);
+                found = await tmdb.FindByExternalIdAsync(extId, source, ct).ConfigureAwait(false);
+            }
+            finally { sem.Release(); }
+
+            if (found?.TvResults is { Count: > 0 } hits)
+                return hits[0].Id.ToString();
+        }
+
+        return null;
+    }
 
     // Returns true only when dateStr is present AND the date is on or before today.
     // Episodes/movies with no date are treated as unaired.

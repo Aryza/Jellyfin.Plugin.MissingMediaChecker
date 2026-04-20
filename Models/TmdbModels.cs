@@ -75,3 +75,16 @@ public class TmdbMoviePart
     [JsonPropertyName("poster_path")]  public string? PosterPath  { get; set; }
     [JsonPropertyName("vote_average")] public double  VoteAverage { get; set; }
 }
+
+// ── /find endpoint ────────────────────────────────────────────────────────────
+
+public class TmdbFindResult
+{
+    [JsonPropertyName("tv_results")]    public List<TmdbFindEntry> TvResults    { get; set; } = new();
+    [JsonPropertyName("movie_results")] public List<TmdbFindEntry> MovieResults { get; set; } = new();
+}
+
+public class TmdbFindEntry
+{
+    [JsonPropertyName("id")] public int Id { get; set; }
+}

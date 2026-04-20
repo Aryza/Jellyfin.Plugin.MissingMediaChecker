@@ -392,6 +392,9 @@
                 qs('#mmcDone').style.display      = 'block';
                 reportLoaded = false;
                 refreshLastScan();
+                // If the user is already viewing the report, reload it now.
+                var repPanel = qs('[data-panel="report"]');
+                if (repPanel && repPanel.style.display !== 'none') loadReport();
                 return;
             }
             qs('#mmcProgressBar').style.width = (data.percentComplete || 0) + '%';
@@ -431,13 +434,16 @@
             }
 
             // Summary cards
+            var skipped = data.seriesSkippedNoId || 0;
             qs('#mmcSummary').innerHTML =
-                card(data.totalSeriesChecked      || 0, 'series checked',          false) +
-                card(data.totalCollectionsChecked || 0, 'collections checked',     false) +
-                card(data.seriesWithMissing       || 0, 'series incomplete',       (data.seriesWithMissing       || 0) > 0) +
-                card(data.collectionsWithMissing  || 0, 'incomplete collections',  (data.collectionsWithMissing  || 0) > 0) +
-                card(data.totalMissingEpisodes    || 0, 'missing episodes',        (data.totalMissingEpisodes    || 0) > 0) +
-                card(data.totalMissingMovies      || 0, 'missing movies',          (data.totalMissingMovies      || 0) > 0);
+                card(data.totalSeriesInLibrary    || 0, 'series in library',        false) +
+                card(data.totalSeriesChecked      || 0, 'series checked via TMDB',  false) +
+                (skipped > 0 ? card(skipped, 'series skipped (no ID)', true) : '') +
+                card(data.totalCollectionsChecked || 0, 'collections checked',      false) +
+                card(data.seriesWithMissing       || 0, 'series incomplete',        (data.seriesWithMissing       || 0) > 0) +
+                card(data.collectionsWithMissing  || 0, 'incomplete collections',   (data.collectionsWithMissing  || 0) > 0) +
+                card(data.totalMissingEpisodes    || 0, 'missing episodes',         (data.totalMissingEpisodes    || 0) > 0) +
+                card(data.totalMissingMovies      || 0, 'missing movies',           (data.totalMissingMovies      || 0) > 0);
 
             allGroups = [];
             (data.missingSeries || []).forEach(function (s) {

@@ -35,7 +35,11 @@ public sealed class TmdbService : IDisposable
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
-    private string Url(string path) => $"{BaseUrl}{path}?api_key={_apiKey}";
+    private string Url(string path)
+    {
+        var sep = path.Contains('?') ? '&' : '?';
+        return $"{BaseUrl}{path}{sep}api_key={_apiKey}";
+    }
 
     private async Task<T?> GetAsync<T>(string path, CancellationToken ct)
     {
@@ -71,6 +75,9 @@ public sealed class TmdbService : IDisposable
 
     public Task<TmdbCollectionDetails?> GetCollectionAsync(int collectionId, CancellationToken ct)
         => GetAsync<TmdbCollectionDetails>($"/collection/{collectionId}", ct);
+
+    public Task<TmdbFindResult?> FindByExternalIdAsync(string externalId, string source, CancellationToken ct)
+        => GetAsync<TmdbFindResult>($"/find/{Uri.EscapeDataString(externalId)}?external_source={source}", ct);
 
     public void Dispose() => _http.Dispose();
 }
