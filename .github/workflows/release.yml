@@ -1,0 +1,114 @@
+name: Release Plugin
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Four-part version (e.g. 1.0.0.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            V="${{ inputs.version }}"
+            TAG="v${V}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+            V="${TAG#v}"
+          fi
+          echo "version=${V}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}"    >> "$GITHUB_OUTPUT"
+
+      - name: Build plugin (jprm)
+        id: jprm
+        uses: oddstr13/jellyfin-plugin-repository-manager@v1.1.1
+        with:
+          version: ${{ steps.ver.outputs.version }}
+          dotnet-target: "net9.0"
+
+      - name: Upload zip to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.jprm.outputs.artifact }}
+
+      - name: Update manifest.json
+        env:
+          VERSION:      ${{ steps.ver.outputs.version }}
+          TAG:          ${{ steps.ver.outputs.tag }}
+          ARTIFACT:     ${{ steps.jprm.outputs.artifact }}
+          CHANGELOG:    ${{ github.event.release.body }}
+          SERVER_URL:   ${{ github.server_url }}
+          REPOSITORY:   ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json, os, hashlib, datetime
+
+          artifact  = os.environ['ARTIFACT']
+          version   = os.environ['VERSION']
+          tag       = os.environ['TAG']
+          changelog = (os.environ.get('CHANGELOG') or f"Release {version}").strip()
+
+          with open(artifact, 'rb') as f:
+              checksum = hashlib.md5(f.read()).hexdigest()
+
+          filename   = os.path.basename(artifact)
+          source_url = f"{os.environ['SERVER_URL']}/{os.environ['REPOSITORY']}/releases/download/{tag}/{filename}"
+          timestamp  = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+          with open('manifest.json') as f:
+              manifest = json.load(f)
+
+          entry = {
+              "version":    version,
+              "changelog":  changelog,
+              "targetAbi":  "10.11.0.0",
+              "sourceUrl":  source_url,
+              "checksum":   checksum,
+              "timestamp":  timestamp,
+          }
+
+          versions = manifest[0].setdefault("versions", [])
+          versions = [v for v in versions if v.get("version") != version]
+          versions.insert(0, entry)
+          manifest[0]["versions"] = versions
+
+          with open('manifest.json', 'w') as f:
+              json.dump(manifest, f, indent=2)
+              f.write("\n")
+          PY
+
+      - name: Commit manifest update
+        run: |
+          if git diff --quiet manifest.json; then
+            echo "manifest.json unchanged"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "chore: update manifest for ${{ steps.ver.outputs.tag }}"
+          git push origin main

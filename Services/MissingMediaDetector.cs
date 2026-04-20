@@ -103,35 +103,6 @@ public class MissingMediaDetector
 
         _logger.LogInformation("MissingMediaChecker: {N} series in library", allSeries.Count);
 
-        // Pre-load every PHYSICAL episode in one DB round-trip and group by SeriesId.
-        // IsVirtualItem = false is critical: Jellyfin's metadata plugins create virtual
-        // placeholder episodes for every missing entry they detect. Without this filter,
-        // virtual placeholders are counted as owned, masking missing episodes entirely.
-        var allEpisodes = _library.GetItemList(new InternalItemsQuery
-        {
-            IncludeItemTypes = new[] { BaseItemKind.Episode },
-            Recursive        = true,
-            IsVirtualItem    = false
-        });
-
-        _logger.LogInformation("MissingMediaChecker: {N} episodes pre-loaded", allEpisodes.Count);
-
-        var ownedBySeries = new Dictionary<Guid, HashSet<(int season, int ep)>>();
-        foreach (var item in allEpisodes)
-        {
-            if (item is not Episode ep) continue;
-            if (!ep.ParentIndexNumber.HasValue || !ep.IndexNumber.HasValue) continue;
-
-            if (!ownedBySeries.TryGetValue(ep.SeriesId, out var set))
-                ownedBySeries[ep.SeriesId] = set = new HashSet<(int, int)>();
-
-            int s      = ep.ParentIndexNumber.Value;
-            int eStart = ep.IndexNumber.Value;
-            int eEnd   = ep.IndexNumberEnd ?? eStart;
-            for (int e = eStart; e <= eEnd; e++)
-                set.Add((s, e));
-        }
-
         var today      = DateTime.UtcNow.Date;
         var reportsBag = new ConcurrentBag<SeriesMissingReport>();
         int checked_   = 0;
@@ -175,10 +146,29 @@ public class MissingMediaDetector
             if (tmdbSeries is null) return;
             Interlocked.Increment(ref checked_);
 
-            // ownedBySeries is read-only after construction — safe for parallel reads.
-            var owned = ownedBySeries.TryGetValue(series.Id, out var s2)
-                ? s2
-                : new HashSet<(int, int)>();
+            // Query only this series' physical episodes via AncestorIds — more reliable
+            // than grouping a global episode list by ep.SeriesId, which can mismatch.
+            var ownedItems = _library.GetItemList(new InternalItemsQuery
+            {
+                IncludeItemTypes = new[] { BaseItemKind.Episode },
+                AncestorIds      = new[] { series.Id },
+                IsVirtualItem    = false,
+                Recursive        = true
+            });
+
+            var owned = new HashSet<(int season, int ep)>();
+            foreach (var item in ownedItems)
+            {
+                if (item is not Episode ep) continue;
+                if (!ep.ParentIndexNumber.HasValue || !ep.IndexNumber.HasValue) continue;
+                int sn     = ep.ParentIndexNumber.Value;
+                int eStart = ep.IndexNumber.Value;
+                int eEnd   = ep.IndexNumberEnd ?? eStart;
+                for (int e = eStart; e <= eEnd; e++)
+                    owned.Add((sn, e));
+            }
+
+            _logger.LogDebug("Series {Name}: {Owned} physical episodes in library", series.Name, owned.Count);
 
             var seasonsToScan = tmdbSeries.Seasons
                 .Where(s => includeSpecials || s.SeasonNumber != 0)

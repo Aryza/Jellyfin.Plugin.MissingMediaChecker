@@ -1,0 +1,17 @@
+---
+name: "Missing Media Checker"
+guid: "9b8e1c4a-2d3f-4e5b-a6c7-d8e9f0a1b2c3"
+version: "1.0.0.0"
+targetAbi: "10.11.0.0"
+framework: "net9.0"
+owner: "Ary"
+category: "General"
+overview: "Finds missing TV episodes and collection movies via TMDB."
+description: >-
+  Scans your Jellyfin library and compares it against TMDB to identify missing
+  episodes, whole seasons, and movies belonging to collections. Generates a
+  sortable, filterable report accessible from the plugin page.
+artifacts:
+  - "Jellyfin.Plugin.MissingMediaChecker.dll"
+changelog: |-
+  Initial release
