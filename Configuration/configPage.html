@@ -72,9 +72,39 @@
                 .mmc-body.collapsed { display: none; }
 
                 .mmc-season-hdr {
+                    display: flex; align-items: center; gap: 8px;
                     padding: 5px 14px; background: rgba(0,0,0,0.2);
                     font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7;
                 }
+                .mmc-full-season {
+                    background: rgba(239,68,68,0.18); color: #fca5a5;
+                    border: 1px solid rgba(239,68,68,0.35);
+                    border-radius: 3px; padding: 1px 7px;
+                    font-size: 0.9em; text-transform: none; letter-spacing: 0; opacity: 1;
+                    white-space: nowrap;
+                }
+                .mmc-skipped-section {
+                    margin-top: 2em; border: 1px solid rgba(251,191,36,0.3);
+                    border-radius: 4px; overflow: hidden;
+                }
+                .mmc-skipped-hdr {
+                    display: flex; align-items: center; gap: 10px;
+                    padding: 10px 14px; background: rgba(251,191,36,0.08); cursor: pointer;
+                }
+                .mmc-skipped-hdr:hover { background: rgba(251,191,36,0.14); }
+                .mmc-skipped-hdr-title { flex: 1; font-weight: 500; font-size: 0.9em; color: #fbbf24; }
+                .mmc-skipped-chevron { font-size: 0.75em; color: #fbbf24; opacity: 0.7; }
+                .mmc-skipped-body { overflow-x: auto; }
+                .mmc-skipped-body.collapsed { display: none; }
+                .mmc-skipped-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+                .mmc-skipped-table th {
+                    padding: 5px 12px; text-align: left; background: rgba(0,0,0,0.15);
+                    font-size: 0.78em; font-weight: 500; text-transform: uppercase;
+                    letter-spacing: 0.04em; opacity: 0.55; color: #fbbf24;
+                }
+                .mmc-skipped-table td { padding: 6px 12px; border-top: 1px solid rgba(255,255,255,0.04); }
+                .mmc-skipped-table tr:hover td { background: rgba(255,255,255,0.02); }
+                .mmc-skipped-ids { font-size: 0.85em; opacity: 0.55; font-family: monospace; }
 
                 .mmc-table { width: 100%; border-collapse: collapse; font-size: 0.85em; min-width: 500px; }
                 .mmc-table th {
@@ -240,6 +270,14 @@
                             <option value="tv">TV series only</option>
                             <option value="movie">Collections only</option>
                         </select>
+                        <select id="mmcSort">
+                            <option value="count-desc">Most missing first</option>
+                            <option value="count-asc">Fewest missing first</option>
+                            <option value="date-desc">Newest air date first</option>
+                            <option value="date-asc">Oldest air date first</option>
+                            <option value="name-asc">Name A → Z</option>
+                            <option value="name-desc">Name Z → A</option>
+                        </select>
                         <select id="mmcPageSize">
                             <option value="25">25 per page</option>
                             <option value="50" selected>50 per page</option>
@@ -252,6 +290,7 @@
 
                     <div id="mmcGroups"></div>
                     <div class="mmc-pager" id="mmcPager"></div>
+                    <div id="mmcSkipped" style="display:none;"></div>
 
                 </div>
 
@@ -337,6 +376,7 @@
     pageEl.addEventListener('change', function (ev) {
         if (!ev.target) return;
         if (ev.target.id === 'mmcFilterType') { applyFilter(); return; }
+        if (ev.target.id === 'mmcSort')       { applyFilter(); return; }
         if (ev.target.id === 'mmcPageSize')   { page = 1; render(); return; }
     });
 
@@ -467,12 +507,26 @@
             allGroups = [];
             (data.missingSeries || []).forEach(function (s) {
                 if ((s.missingCount || 0) > 0)
-                    allGroups.push({ type: 'tv', name: s.seriesName || '', data: s });
+                    allGroups.push({
+                        type: 'tv',
+                        name: s.seriesName || '',
+                        count: s.missingCount || 0,
+                        latestDate: latestDateOf(s.missingEpisodes || [], 'airDate'),
+                        data: s
+                    });
             });
             (data.missingCollections || []).forEach(function (c) {
                 if ((c.missingCount || 0) > 0)
-                    allGroups.push({ type: 'movie', name: c.collectionName || '', data: c });
+                    allGroups.push({
+                        type: 'movie',
+                        name: c.collectionName || '',
+                        count: c.missingCount || 0,
+                        latestDate: latestDateOf(c.missingMovies || [], 'releaseDate'),
+                        data: c
+                    });
             });
+
+            renderSkipped(data.skippedSeries || []);
 
             qs('#mmcRepMain').style.display = 'block';
             applyFilter();
@@ -497,15 +551,39 @@
         el.style.display = 'block';
     }
 
-    // ── Filter & pagination ────────────────────────────────────────────────────
+    // ── Filter, sort & pagination ──────────────────────────────────────────────
+    function latestDateOf(items, field) {
+        var best = 0;
+        items.forEach(function (it) {
+            var v = it[field];
+            if (v) { var t = new Date(v).getTime(); if (t > best) best = t; }
+        });
+        return best;
+    }
+
     function applyFilter() {
         var text = (qs('#mmcFilter').value || '').toLowerCase().trim();
         var type = qs('#mmcFilterType').value || 'all';
+        var sort = (qs('#mmcSort') && qs('#mmcSort').value) || 'count-desc';
+
         filtered = allGroups.filter(function (g) {
             if (type !== 'all' && g.type !== type) return false;
             if (text && g.name.toLowerCase().indexOf(text) === -1) return false;
             return true;
         });
+
+        filtered.sort(function (a, b) {
+            switch (sort) {
+                case 'count-asc':  return a.count - b.count;
+                case 'count-desc': return b.count - a.count;
+                case 'date-desc':  return b.latestDate - a.latestDate;
+                case 'date-asc':   return a.latestDate - b.latestDate;
+                case 'name-asc':   return a.name.localeCompare(b.name);
+                case 'name-desc':  return b.name.localeCompare(a.name);
+                default:           return b.count - a.count;
+            }
+        });
+
         page = 1;
         render();
     }
@@ -561,10 +639,16 @@
         });
 
         var bodyHtml = '';
+        var missingSeasonsSet = {};
+        (series.missingSeasons || []).forEach(function (s) { missingSeasonsSet[s] = true; });
+
         Object.keys(bySeason).sort(function (a, b) { return +a - +b; }).forEach(function (sn) {
             var eps = bySeason[sn];
-            bodyHtml += '<div class="mmc-season-hdr">Season ' + sn +
-                        ' &mdash; ' + eps.length + ' missing</div>';
+            var fullBadge = missingSeasonsSet[+sn]
+                ? '<span class="mmc-full-season">&#9888; Complete season missing</span>'
+                : '';
+            bodyHtml += '<div class="mmc-season-hdr"><span>Season ' + sn +
+                        ' &mdash; ' + eps.length + ' missing</span>' + fullBadge + '</div>';
             bodyHtml += '<table class="mmc-table"><thead><tr>' +
                 '<th>Episode</th><th>Title</th><th>Air Date</th><th>Overview</th><th>TMDB</th>' +
                 '</tr></thead><tbody>';
@@ -679,6 +763,40 @@
         return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
     function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+    // ── Skipped series section ─────────────────────────────────────────────────
+    function renderSkipped(skipped) {
+        var el = qs('#mmcSkipped');
+        if (!skipped || skipped.length === 0) { el.style.display = 'none'; return; }
+
+        el.style.display = 'block';
+        var rows = skipped.map(function (s) {
+            return '<tr>' +
+                '<td>' + esc(s.seriesName) + '</td>' +
+                '<td class="mmc-skipped-ids">' + esc(s.availableIds) + '</td>' +
+                '</tr>';
+        }).join('');
+
+        el.innerHTML =
+            '<div class="mmc-skipped-section">' +
+            '<div class="mmc-skipped-hdr" id="mmcSkippedHdr">' +
+            '<span class="mmc-skipped-hdr-title">&#9888; ' + skipped.length +
+            ' series skipped — no TMDB ID could be resolved</span>' +
+            '<span class="mmc-skipped-chevron" id="mmcSkippedChev">&#9654;</span>' +
+            '</div>' +
+            '<div class="mmc-skipped-body collapsed" id="mmcSkippedBody">' +
+            '<table class="mmc-skipped-table"><thead><tr>' +
+            '<th>Series name</th><th>Provider IDs available</th>' +
+            '</tr></thead><tbody>' + rows + '</tbody></table>' +
+            '</div></div>';
+
+        qs('#mmcSkippedHdr').addEventListener('click', function () {
+            var body = qs('#mmcSkippedBody');
+            var chev = qs('#mmcSkippedChev');
+            var collapsed = body.classList.toggle('collapsed');
+            chev.textContent = collapsed ? '\u25B6' : '\u25BC';
+        });
+    }
 
     // ── Diagnostics ────────────────────────────────────────────────────────────
     function doDiag() {

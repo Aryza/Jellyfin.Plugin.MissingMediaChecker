@@ -24,7 +24,18 @@ public class SeriesMissingReport
     [JsonPropertyName("totalEpisodesOnTmdb")]    public int     TotalEpisodesOnTmdb    { get; set; }
     [JsonPropertyName("totalEpisodesInLibrary")] public int     TotalEpisodesInLibrary { get; set; }
     [JsonPropertyName("missingCount")]           public int     MissingCount           { get; set; }
+    /// <summary>Season numbers where every eligible episode is missing.</summary>
+    [JsonPropertyName("missingSeasons")]         public List<int> MissingSeasons       { get; set; } = new();
     [JsonPropertyName("missingEpisodes")]        public List<MissingEpisode> MissingEpisodes { get; set; } = new();
+}
+
+// ── Skipped series ────────────────────────────────────────────────────────────
+
+public class SkippedSeries
+{
+    [JsonPropertyName("seriesName")]   public string SeriesName   { get; set; } = string.Empty;
+    /// <summary>Human-readable summary of which provider IDs were tried (e.g. "Tvdb:12345").</summary>
+    [JsonPropertyName("availableIds")] public string AvailableIds { get; set; } = string.Empty;
 }
 
 // ── Movies / Collections ─────────────────────────────────────────────────────
@@ -44,7 +55,6 @@ public class CollectionMissingReport
 {
     [JsonPropertyName("collectionName")]          public string  CollectionName          { get; set; } = string.Empty;
     [JsonPropertyName("tmdbCollectionId")]         public int     TmdbCollectionId        { get; set; }
-    /// <summary>Jellyfin box-set ID, populated when a matching BoxSet item exists in the library.</summary>
     [JsonPropertyName("jellyfinCollectionId")]     public Guid?   JellyfinCollectionId    { get; set; }
     [JsonPropertyName("totalMoviesInCollection")]  public int     TotalMoviesInCollection { get; set; }
     [JsonPropertyName("moviesInLibrary")]          public int     MoviesInLibrary         { get; set; }
@@ -67,4 +77,5 @@ public class ScanResults
     [JsonPropertyName("totalMissingMovies")]       public int            TotalMissingMovies      { get; set; }
     [JsonPropertyName("missingSeries")]            public List<SeriesMissingReport>     MissingSeries      { get; set; } = new();
     [JsonPropertyName("missingCollections")]       public List<CollectionMissingReport> MissingCollections { get; set; } = new();
+    [JsonPropertyName("skippedSeries")]            public List<SkippedSeries>           SkippedSeries      { get; set; } = new();
 }

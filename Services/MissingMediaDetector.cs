@@ -50,14 +50,15 @@ public class MissingMediaDetector
         if (checkSeries)
         {
             progress.Report((0, "Loading TV library…"));
-            var (reports, total, inLib, skipped) = await ScanSeriesAsync(
+            var (reports, total, inLib, skippedList) = await ScanSeriesAsync(
                 tmdb, includeSpecials, skipUnaired,
                 pct => progress.Report((pct * half / 100, $"TV series: {pct:F0}%")), ct)
                 .ConfigureAwait(false);
 
             results.TotalSeriesInLibrary = inLib;
             results.TotalSeriesChecked   = total;
-            results.SeriesSkippedNoId    = skipped;
+            results.SeriesSkippedNoId    = skippedList.Count;
+            results.SkippedSeries        = skippedList;
             results.MissingSeries        = reports.Where(r => r.MissingCount > 0)
                                                    .OrderByDescending(r => r.MissingCount)
                                                    .ToList();
@@ -88,7 +89,7 @@ public class MissingMediaDetector
 
     // ── TV series scan ────────────────────────────────────────────────────────
 
-    private async Task<(List<SeriesMissingReport> reports, int totalChecked, int totalInLibrary, int skippedNoId)> ScanSeriesAsync(
+    private async Task<(List<SeriesMissingReport> reports, int totalChecked, int totalInLibrary, List<SkippedSeries> skipped)> ScanSeriesAsync(
         TmdbService    tmdb,
         bool           includeSpecials,
         bool           skipUnaired,
@@ -105,8 +106,8 @@ public class MissingMediaDetector
 
         var today      = DateTime.UtcNow.Date;
         var reportsBag = new ConcurrentBag<SeriesMissingReport>();
+        var skippedBag = new ConcurrentBag<SkippedSeries>();
         int checked_   = 0;
-        int skipped_   = 0;
         int done_      = 0;
 
         using var tmdbSem = new SemaphoreSlim(ConcurrentTmdbRequests, ConcurrentTmdbRequests);
@@ -127,7 +128,14 @@ public class MissingMediaDetector
                 if (string.IsNullOrEmpty(tmdbId))
                 {
                     _logger.LogDebug("Series {Name}: no resolvable TMDB ID, skipping", series.Name);
-                    Interlocked.Increment(ref skipped_);
+                    var availIds = string.Join(", ", series.ProviderIds
+                        .Where(kv => !string.IsNullOrEmpty(kv.Value))
+                        .Select(kv => $"{kv.Key}:{kv.Value}"));
+                    skippedBag.Add(new SkippedSeries
+                    {
+                        SeriesName   = series.Name,
+                        AvailableIds = string.IsNullOrEmpty(availIds) ? "none" : availIds
+                    });
                     report((double)Interlocked.Increment(ref done_) / allSeries.Count * 100);
                     return;
                 }
@@ -222,6 +230,19 @@ public class MissingMediaDetector
                     ? a.SeasonNumber.CompareTo(b.SeasonNumber)
                     : a.EpisodeNumber.CompareTo(b.EpisodeNumber));
 
+            // Detect fully-missing seasons: every eligible episode in that season is absent.
+            var missingSeasons = new List<int>();
+            foreach (var sd in seasonDetails)
+            {
+                if (sd is null) continue;
+                var eligible = sd.Episodes
+                    .Where(ep => !skipUnaired || HasAired(ep.AirDate, today))
+                    .ToList();
+                if (eligible.Count > 0 &&
+                    eligible.All(ep => !owned.Contains((ep.SeasonNumber, ep.EpisodeNumber))))
+                    missingSeasons.Add(sd.SeasonNumber);
+            }
+
             reportsBag.Add(new SeriesMissingReport
             {
                 SeriesName             = series.Name,
@@ -230,6 +251,7 @@ public class MissingMediaDetector
                 TotalEpisodesOnTmdb    = tmdbEpCount,
                 TotalEpisodesInLibrary = owned.Count,
                 MissingCount           = missing.Count,
+                MissingSeasons         = missingSeasons,
                 MissingEpisodes        = missing
             });
 
@@ -244,11 +266,12 @@ public class MissingMediaDetector
 
         await Task.WhenAll(seriesTasks).ConfigureAwait(false);
 
+        var skippedList = skippedBag.ToList();
         _logger.LogInformation(
             "MissingMediaChecker: series scan done — library={Lib}, checked={Checked}, skipped(noId)={Skipped}",
-            allSeries.Count, checked_, skipped_);
+            allSeries.Count, checked_, skippedList.Count);
 
-        return (reportsBag.ToList(), checked_, allSeries.Count, skipped_);
+        return (reportsBag.ToList(), checked_, allSeries.Count, skippedList);
     }
 
     // ── Collection / movie scan ───────────────────────────────────────────────
