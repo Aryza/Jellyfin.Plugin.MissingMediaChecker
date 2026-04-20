@@ -377,6 +377,30 @@ public class MissingMediaDetector
             });
         }
 
+        // ── Match each report to a Jellyfin box-set (best-effort, name match) ──
+        // Jellyfin's TMDB plugin auto-creates BoxSet items whose names match the
+        // TMDB collection name, so an exact case-insensitive lookup works in
+        // most libraries.
+        var boxSets = _library.GetItemList(new InternalItemsQuery
+        {
+            IncludeItemTypes = new[] { BaseItemKind.BoxSet },
+            Recursive        = true
+        });
+
+        var boxSetByName = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+        foreach (var bs in boxSets)
+            boxSetByName.TryAdd(bs.Name, bs.Id);
+
+        foreach (var r in reports)
+        {
+            if (boxSetByName.TryGetValue(r.CollectionName, out var bsId))
+                r.JellyfinCollectionId = bsId;
+        }
+
+        _logger.LogInformation(
+            "MissingMediaChecker: matched {N}/{T} TMDB collections to Jellyfin box-sets",
+            reports.Count(r => r.JellyfinCollectionId.HasValue), reports.Count);
+
         return (reports, collectionDetails.Count);
     }
 

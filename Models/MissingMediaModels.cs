@@ -42,11 +42,13 @@ public class MissingMovie
 
 public class CollectionMissingReport
 {
-    [JsonPropertyName("collectionName")]          public string CollectionName          { get; set; } = string.Empty;
-    [JsonPropertyName("tmdbCollectionId")]         public int    TmdbCollectionId        { get; set; }
-    [JsonPropertyName("totalMoviesInCollection")]  public int    TotalMoviesInCollection { get; set; }
-    [JsonPropertyName("moviesInLibrary")]          public int    MoviesInLibrary         { get; set; }
-    [JsonPropertyName("missingCount")]             public int    MissingCount            { get; set; }
+    [JsonPropertyName("collectionName")]          public string  CollectionName          { get; set; } = string.Empty;
+    [JsonPropertyName("tmdbCollectionId")]         public int     TmdbCollectionId        { get; set; }
+    /// <summary>Jellyfin box-set ID, populated when a matching BoxSet item exists in the library.</summary>
+    [JsonPropertyName("jellyfinCollectionId")]     public Guid?   JellyfinCollectionId    { get; set; }
+    [JsonPropertyName("totalMoviesInCollection")]  public int     TotalMoviesInCollection { get; set; }
+    [JsonPropertyName("moviesInLibrary")]          public int     MoviesInLibrary         { get; set; }
+    [JsonPropertyName("missingCount")]             public int     MissingCount            { get; set; }
     [JsonPropertyName("missingMovies")]            public List<MissingMovie> MissingMovies { get; set; } = new();
 }
 

@@ -87,6 +87,13 @@
                 .mmc-overview { opacity: 0.6; font-size: 0.9em; max-width: 360px; }
                 .mmc-tmdb-link { color: #00a4dc; text-decoration: none; }
                 .mmc-tmdb-link:hover { text-decoration: underline; }
+                .mmc-jf-link {
+                    color: #aa5cc3; text-decoration: none;
+                    font-size: 0.78em; margin-left: 6px;
+                    padding: 1px 6px; border: 1px solid rgba(170,92,195,0.35);
+                    border-radius: 3px; white-space: nowrap;
+                }
+                .mmc-jf-link:hover { background: rgba(170,92,195,0.12); text-decoration: none; }
 
                 .mmc-pager { display: flex; gap: 6px; align-items: center; margin-top: 1.2em; flex-wrap: wrap; }
                 .mmc-pager button {
@@ -530,6 +537,18 @@
         renderPager(pages, ps);
     }
 
+    // ── Jellyfin deep-link helper ──────────────────────────────────────────────
+    function jellyfinUrl(itemId) {
+        if (!itemId) return null;
+        var sid = (ApiClient && ApiClient.serverId) ? ApiClient.serverId() : '';
+        return '/web/index.html#!/details?id=' + itemId + (sid ? '&serverId=' + sid : '');
+    }
+    function jellyfinLink(itemId) {
+        var url = jellyfinUrl(itemId);
+        if (!url) return '';
+        return '<a class="mmc-jf-link" href="' + url + '" target="_blank" title="Open in Jellyfin">Jellyfin &#8599;</a>';
+    }
+
     // ── Group builders ─────────────────────────────────────────────────────────
     function makeSeriesGroup(series) {
         var tmdbUrl = 'https://www.themoviedb.org/tv/' + series.tmdbId;
@@ -564,9 +583,13 @@
             bodyHtml += '</tbody></table>';
         });
 
+        var titleHtml =
+            '<a class="mmc-tmdb-link" href="' + tmdbUrl + '" target="_blank">' + esc(series.seriesName) + '</a>' +
+            jellyfinLink(series.jellyfinId);
+
         return makeGroup(
             '<span class="mmc-badge mmc-badge-tv">TV</span>',
-            '<a class="mmc-tmdb-link" href="' + tmdbUrl + '" target="_blank">' + esc(series.seriesName) + '</a>',
+            titleHtml,
             series.missingCount + ' missing / ' + series.totalEpisodesOnTmdb + ' on TMDB',
             bodyHtml
         );
@@ -592,9 +615,13 @@
         });
         bodyHtml += '</tbody></table>';
 
+        var titleHtml =
+            '<a class="mmc-tmdb-link" href="' + colUrl + '" target="_blank">' + esc(col.collectionName) + '</a>' +
+            jellyfinLink(col.jellyfinCollectionId);
+
         return makeGroup(
             '<span class="mmc-badge mmc-badge-movie">Collection</span>',
-            '<a class="mmc-tmdb-link" href="' + colUrl + '" target="_blank">' + esc(col.collectionName) + '</a>',
+            titleHtml,
             col.missingCount + ' missing / ' + col.totalMoviesInCollection + ' in collection',
             bodyHtml
         );
