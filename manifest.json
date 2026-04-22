@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.1.1.0",
+        "changelog": "## What's new\n\n- **Ignore list shows names** \u2014 entries now display human-readable titles (e.g. \"The Matrix\") instead of raw TMDB IDs. Pre-existing entries from v1.1.0.0 fall back to \"(TMDB N)\" \u2014 re-add them once to attach names.\n- **Hover-zoom posters** \u2014 hovering a poster thumbnail in a group header enlarges it 4\u00d7 with a soft shadow. Page layout is unaffected while the enlarged image overlays the row.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v1.1.1.0/missing-media-checker_1.1.1.0.zip",
+        "checksum": "4d81bbea820eb4553f52816c01254b58",
+        "timestamp": "2026-04-22T17:45:42Z"
+      },
+      {
         "version": "1.1.0.0",
         "changelog": "## What's new\n\n- **New since last scan** \u2014 highlights newly missing items since the previous run\n- **Season badges** \u2014 collapsed series headers show which seasons have missing content (fully missing = red, partial = amber)\n- **Poster thumbnails** \u2014 TMDB artwork displayed next to each group header\n- **Ignore list** \u2014 suppress individual episodes, seasons, series, movies, or entire collections; managed from the UI\n- **Incremental / smart scan** \u2014 skips ended series whose owned-episode count hasn't changed, reducing TMDB API calls dramatically\n- **Recently-aired-only mode** \u2014 filter results to a configurable day window (e.g. last 30 days)\n- **Paginated streaming API** \u2014 `/Results/Summary` + `/Results/Groups` endpoints; UI loads pages on demand\n- **Plugin notifications** \u2014 posts a Jellyfin activity-log entry when new missing media is found\n\n## Requirements\n\n- Jellyfin 10.11 or newer\n- TMDB v3 API key",
         "targetAbi": "10.11.0.0",
