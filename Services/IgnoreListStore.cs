@@ -33,6 +33,21 @@ public sealed class IgnoreList
     [JsonPropertyName("movieTmdbIds")]
     public HashSet<int> MovieTmdbIds { get; set; } = new();
 
+    /// <summary>
+    /// Human-readable labels for ignored items so the UI can show "The Matrix"
+    /// instead of raw TMDB IDs. Keys follow <see cref="LabelKey"/>; missing
+    /// entries fall back to the ID in the UI.
+    /// </summary>
+    [JsonPropertyName("labels")]
+    public Dictionary<string, string> Labels { get; set; } = new();
+
+    /// <summary>
+    /// Label key builder. Examples:
+    ///   series:123, season:123:2, episode:123:S01E05, collection:7, movie:42
+    /// </summary>
+    public static string LabelKey(string kind, string? a = null, string? b = null)
+        => b is null ? $"{kind}:{a}" : $"{kind}:{a}:{b}";
+
     // ── lookups (fast-path; nothing allocating) ───────────────────────────────
 
     public bool IsSeriesIgnored(string? tmdbId)

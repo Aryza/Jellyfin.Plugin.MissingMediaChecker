@@ -183,19 +183,23 @@ public class MissingMediaController : ControllerBase
 
     public record AddIgnoreRequest(string Kind, string? TmdbSeriesId, int? SeasonNumber,
                                    int? EpisodeNumber, int? TmdbEpisodeId,
-                                   int? TmdbCollectionId, int? TmdbMovieId);
+                                   int? TmdbCollectionId, int? TmdbMovieId,
+                                   string? Name);
 
     [HttpPost("Ignores/Add")]
     public ActionResult AddIgnore([FromBody] AddIgnoreRequest req)
     {
         if (req is null) return BadRequest();
         var list = IgnoreListStore.Load(Plugin.IgnoreListPath);
+        var kind = req.Kind?.ToLowerInvariant();
 
-        switch (req.Kind?.ToLowerInvariant())
+        switch (kind)
         {
             case "series":
                 if (string.IsNullOrEmpty(req.TmdbSeriesId)) return BadRequest("tmdbSeriesId required");
                 list.SeriesTmdbIds.Add(req.TmdbSeriesId);
+                if (!string.IsNullOrWhiteSpace(req.Name))
+                    list.Labels[IgnoreList.LabelKey("series", req.TmdbSeriesId)] = req.Name!;
                 break;
             case "season":
                 if (string.IsNullOrEmpty(req.TmdbSeriesId) || req.SeasonNumber is null)
@@ -203,6 +207,8 @@ public class MissingMediaController : ControllerBase
                 if (!list.Seasons.TryGetValue(req.TmdbSeriesId, out var seasons))
                     list.Seasons[req.TmdbSeriesId] = seasons = new HashSet<int>();
                 seasons.Add(req.SeasonNumber.Value);
+                if (!string.IsNullOrWhiteSpace(req.Name))
+                    list.Labels[IgnoreList.LabelKey("season", req.TmdbSeriesId, req.SeasonNumber.Value.ToString())] = req.Name!;
                 break;
             case "episode":
                 if (string.IsNullOrEmpty(req.TmdbSeriesId) ||
@@ -210,15 +216,22 @@ public class MissingMediaController : ControllerBase
                     return BadRequest("tmdbSeriesId + seasonNumber + episodeNumber required");
                 if (!list.Episodes.TryGetValue(req.TmdbSeriesId, out var eps))
                     list.Episodes[req.TmdbSeriesId] = eps = new HashSet<string>();
-                eps.Add(IgnoreList.Key(req.SeasonNumber.Value, req.EpisodeNumber.Value));
+                var epKey = IgnoreList.Key(req.SeasonNumber.Value, req.EpisodeNumber.Value);
+                eps.Add(epKey);
+                if (!string.IsNullOrWhiteSpace(req.Name))
+                    list.Labels[IgnoreList.LabelKey("episode", req.TmdbSeriesId, epKey)] = req.Name!;
                 break;
             case "collection":
                 if (req.TmdbCollectionId is null) return BadRequest("tmdbCollectionId required");
                 list.CollectionTmdbIds.Add(req.TmdbCollectionId.Value);
+                if (!string.IsNullOrWhiteSpace(req.Name))
+                    list.Labels[IgnoreList.LabelKey("collection", req.TmdbCollectionId.Value.ToString())] = req.Name!;
                 break;
             case "movie":
                 if (req.TmdbMovieId is null) return BadRequest("tmdbMovieId required");
                 list.MovieTmdbIds.Add(req.TmdbMovieId.Value);
+                if (!string.IsNullOrWhiteSpace(req.Name))
+                    list.Labels[IgnoreList.LabelKey("movie", req.TmdbMovieId.Value.ToString())] = req.Name!;
                 break;
             default:
                 return BadRequest("kind must be series|season|episode|collection|movie");
@@ -237,24 +250,43 @@ public class MissingMediaController : ControllerBase
         switch (req.Kind?.ToLowerInvariant())
         {
             case "series":
-                if (!string.IsNullOrEmpty(req.TmdbSeriesId)) list.SeriesTmdbIds.Remove(req.TmdbSeriesId);
+                if (!string.IsNullOrEmpty(req.TmdbSeriesId))
+                {
+                    list.SeriesTmdbIds.Remove(req.TmdbSeriesId);
+                    list.Labels.Remove(IgnoreList.LabelKey("series", req.TmdbSeriesId));
+                }
                 break;
             case "season":
                 if (!string.IsNullOrEmpty(req.TmdbSeriesId) && req.SeasonNumber is not null
                     && list.Seasons.TryGetValue(req.TmdbSeriesId, out var seasons))
+                {
                     seasons.Remove(req.SeasonNumber.Value);
+                    list.Labels.Remove(IgnoreList.LabelKey("season", req.TmdbSeriesId, req.SeasonNumber.Value.ToString()));
+                }
                 break;
             case "episode":
                 if (!string.IsNullOrEmpty(req.TmdbSeriesId)
                     && req.SeasonNumber is not null && req.EpisodeNumber is not null
                     && list.Episodes.TryGetValue(req.TmdbSeriesId, out var eps))
-                    eps.Remove(IgnoreList.Key(req.SeasonNumber.Value, req.EpisodeNumber.Value));
+                {
+                    var epKey = IgnoreList.Key(req.SeasonNumber.Value, req.EpisodeNumber.Value);
+                    eps.Remove(epKey);
+                    list.Labels.Remove(IgnoreList.LabelKey("episode", req.TmdbSeriesId, epKey));
+                }
                 break;
             case "collection":
-                if (req.TmdbCollectionId is not null) list.CollectionTmdbIds.Remove(req.TmdbCollectionId.Value);
+                if (req.TmdbCollectionId is not null)
+                {
+                    list.CollectionTmdbIds.Remove(req.TmdbCollectionId.Value);
+                    list.Labels.Remove(IgnoreList.LabelKey("collection", req.TmdbCollectionId.Value.ToString()));
+                }
                 break;
             case "movie":
-                if (req.TmdbMovieId is not null) list.MovieTmdbIds.Remove(req.TmdbMovieId.Value);
+                if (req.TmdbMovieId is not null)
+                {
+                    list.MovieTmdbIds.Remove(req.TmdbMovieId.Value);
+                    list.Labels.Remove(IgnoreList.LabelKey("movie", req.TmdbMovieId.Value.ToString()));
+                }
                 break;
         }
 

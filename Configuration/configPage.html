@@ -57,10 +57,16 @@
                 }
                 .mmc-toolbar button:hover { background: rgba(255,255,255,0.13); }
 
-                .mmc-group { border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 1em; overflow: hidden; }
+                .mmc-group {
+                    border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;
+                    margin-bottom: 1em;
+                    /* overflow visible so hover-zoomed poster is not clipped */
+                    overflow: visible;
+                }
                 .mmc-hdr {
                     display: flex; align-items: center; gap: 10px;
                     padding: 10px 14px; background: rgba(255,255,255,0.05); cursor: pointer;
+                    overflow: visible;
                 }
                 .mmc-hdr:hover { background: rgba(255,255,255,0.09); }
                 .mmc-hdr-title { flex: 1; font-weight: 500; font-size: 0.95em; }
@@ -69,17 +75,31 @@
                 .mmc-badge-tv    { background: rgba(0,164,220,0.2);   color: #7dd3fc; }
                 .mmc-badge-movie { background: rgba(168,85,247,0.2);  color: #d8b4fe; }
 
-                /* Feature 6: poster thumbnail in group header */
+                /* Feature 6: poster thumbnail in group header.
+                   Hover: scale up ~4x without reflowing anything around it.
+                   transform doesn't affect layout; position:relative + z-index
+                   stacks it above siblings. */
                 .mmc-hdr-poster {
                     width: 38px; height: 57px; object-fit: cover;
                     border-radius: 3px; background: rgba(255,255,255,0.05);
                     flex-shrink: 0;
+                    position: relative; z-index: 1;
+                    transform-origin: left center;
+                    transition: transform 0.18s ease-out, box-shadow 0.18s ease-out;
+                    cursor: zoom-in;
+                }
+                .mmc-hdr-poster:hover {
+                    transform: scale(4);
+                    z-index: 100;
+                    box-shadow: 0 4px 24px rgba(0,0,0,0.7);
                 }
                 .mmc-hdr-poster.placeholder {
                     display: flex; align-items: center; justify-content: center;
                     font-size: 0.7em; color: rgba(255,255,255,0.25);
                     border: 1px dashed rgba(255,255,255,0.12);
+                    cursor: default;
                 }
+                .mmc-hdr-poster.placeholder:hover { transform: none; box-shadow: none; }
 
                 /* Feature 3: season badges on collapsed series header */
                 .mmc-season-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 6px; }
@@ -520,7 +540,8 @@
                 seasonNumber:     parseIntOrNull(ignBtn.getAttribute('data-season')),
                 episodeNumber:    parseIntOrNull(ignBtn.getAttribute('data-episode')),
                 tmdbCollectionId: parseIntOrNull(ignBtn.getAttribute('data-col')),
-                tmdbMovieId:      parseIntOrNull(ignBtn.getAttribute('data-movie'))
+                tmdbMovieId:      parseIntOrNull(ignBtn.getAttribute('data-movie')),
+                name:             ignBtn.getAttribute('data-name') || null
             };
             apiPost('MissingMedia/Ignores/Add', payload).then(function () {
                 Dashboard.alert('Added to ignore list. Will take effect on next report refresh.');
@@ -820,6 +841,7 @@
                 : '';
             var ignSeasonBtn = '<button class="mmc-ign-btn" data-kind="season" ' +
                 'data-series="' + esc(series.tmdbId || '') + '" data-season="' + sn + '" ' +
+                'data-name="' + esc((series.seriesName || '') + ' · Season ' + sn) + '" ' +
                 'title="Ignore this whole season">ignore</button>';
             var collapseCls = isFullMissing ? ' collapsed' : '';
             bodyHtml +=
@@ -837,9 +859,13 @@
                 var epUrl = 'https://www.themoviedb.org/tv/' + series.tmdbId +
                             '/season/' + ep.seasonNumber + '/episode/' + ep.episodeNumber;
                 var newBadge = ep.isNew ? '<span class="mmc-new-badge">NEW</span>' : '';
+                var epLabel = (series.seriesName || '') +
+                              ' · S' + pad(ep.seasonNumber) + 'E' + pad(ep.episodeNumber) +
+                              (ep.episodeName ? ' · ' + ep.episodeName : '');
                 var ignEpBtn = '<button class="mmc-ign-btn" data-kind="episode" ' +
                     'data-series="' + esc(series.tmdbId || '') + '" ' +
                     'data-season="' + ep.seasonNumber + '" data-episode="' + ep.episodeNumber + '" ' +
+                    'data-name="' + esc(epLabel) + '" ' +
                     'title="Ignore this episode">ignore</button>';
                 bodyHtml +=
                     '<tr class="' + (ep.isNew ? 'mmc-row-new' : '') + '">' +
@@ -857,7 +883,9 @@
         var newCount   = series.newMissingCount || 0;
         var newHdr     = newCount > 0 ? ' <span class="mmc-new-badge">+' + newCount + ' new</span>' : '';
         var ignSeriesBtn = '<button class="mmc-ign-btn" data-kind="series" ' +
-            'data-series="' + esc(series.tmdbId || '') + '" title="Ignore this whole series">ignore series</button>';
+            'data-series="' + esc(series.tmdbId || '') + '" ' +
+            'data-name="' + esc(series.seriesName || '') + '" ' +
+            'title="Ignore this whole series">ignore series</button>';
 
         var titleHtml =
             '<a class="mmc-tmdb-link" href="' + tmdbUrl + '" target="_blank">' + esc(series.seriesName) + '</a>' +
@@ -886,8 +914,11 @@
             var mUrl   = 'https://www.themoviedb.org/movie/' + m.tmdbId;
             var rating = m.voteAverage ? '&#9733; ' + (+m.voteAverage).toFixed(1) : '&mdash;';
             var newBadge = m.isNew ? '<span class="mmc-new-badge">NEW</span>' : '';
+            var movieLabel = m.title + (m.year ? ' (' + m.year + ')' : '');
             var ignMovieBtn = '<button class="mmc-ign-btn" data-kind="movie" ' +
-                'data-movie="' + m.tmdbId + '" title="Ignore this movie">ignore</button>';
+                'data-movie="' + m.tmdbId + '" ' +
+                'data-name="' + esc(movieLabel) + '" ' +
+                'title="Ignore this movie">ignore</button>';
             bodyHtml +=
                 '<tr class="' + (m.isNew ? 'mmc-row-new' : '') + '">' +
                 '<td><strong>' + esc(m.title) + '</strong>' + newBadge + justWatchLink('movie', m.tmdbId) + '</td>' +
@@ -903,7 +934,9 @@
         var newCount = col.newMissingCount || 0;
         var newHdr   = newCount > 0 ? ' <span class="mmc-new-badge">+' + newCount + ' new</span>' : '';
         var ignColBtn = '<button class="mmc-ign-btn" data-kind="collection" ' +
-            'data-col="' + col.tmdbCollectionId + '" title="Ignore this collection">ignore collection</button>';
+            'data-col="' + col.tmdbCollectionId + '" ' +
+            'data-name="' + esc(col.collectionName || '') + '" ' +
+            'title="Ignore this collection">ignore collection</button>';
 
         var titleHtml =
             '<a class="mmc-tmdb-link" href="' + colUrl + '" target="_blank">' + esc(col.collectionName) + '</a>' +
@@ -1056,14 +1089,21 @@
             html += '</div>';
         }
 
+        var labels = list.labels || {};
+        function lbl(key, fallback) {
+            return labels[key] || fallback;
+        }
+
         var seriesItems = (list.seriesTmdbIds || []).map(function (id) {
-            return { kind: 'series', seriesId: id, label: 'Series TMDB ' + id };
+            return { kind: 'series', seriesId: id,
+                     label: lbl('series:' + id, 'Series (TMDB ' + id + ')') };
         });
         var seasonItems = [];
         Object.keys(list.seasons || {}).forEach(function (sid) {
             (list.seasons[sid] || []).forEach(function (sn) {
                 seasonItems.push({ kind: 'season', seriesId: sid, season: sn,
-                                   label: 'Series ' + sid + ' · S' + sn });
+                                   label: lbl('season:' + sid + ':' + sn,
+                                              'Series (TMDB ' + sid + ') · Season ' + sn) });
             });
         });
         var epItems = [];
@@ -1074,15 +1114,18 @@
                 if (m) {
                     epItems.push({ kind: 'episode', seriesId: sid,
                                    season: +m[1], episode: +m[2],
-                                   label: 'Series ' + sid + ' · ' + key });
+                                   label: lbl('episode:' + sid + ':' + key,
+                                              'Series (TMDB ' + sid + ') · ' + key) });
                 }
             });
         });
         var colItems = (list.collectionTmdbIds || []).map(function (id) {
-            return { kind: 'collection', col: id, label: 'Collection TMDB ' + id };
+            return { kind: 'collection', col: id,
+                     label: lbl('collection:' + id, 'Collection (TMDB ' + id + ')') };
         });
         var movieItems = (list.movieTmdbIds || []).map(function (id) {
-            return { kind: 'movie', movie: id, label: 'Movie TMDB ' + id };
+            return { kind: 'movie', movie: id,
+                     label: lbl('movie:' + id, 'Movie (TMDB ' + id + ')') };
         });
 
         section('Series',      seriesItems);
