@@ -31,6 +31,7 @@
                 }
                 .mmc-card-num { font-size: 1.8em; font-weight: bold; color: #00a4dc; }
                 .mmc-card-num.warn { color: #ff9800; }
+                .mmc-card-num.new  { color: #22c55e; }
                 .mmc-card-lbl { font-size: 0.78em; opacity: 0.6; margin-top: 4px; }
 
                 .mmc-toolbar {
@@ -68,6 +69,40 @@
                 .mmc-badge-tv    { background: rgba(0,164,220,0.2);   color: #7dd3fc; }
                 .mmc-badge-movie { background: rgba(168,85,247,0.2);  color: #d8b4fe; }
 
+                /* Feature 6: poster thumbnail in group header */
+                .mmc-hdr-poster {
+                    width: 38px; height: 57px; object-fit: cover;
+                    border-radius: 3px; background: rgba(255,255,255,0.05);
+                    flex-shrink: 0;
+                }
+                .mmc-hdr-poster.placeholder {
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 0.7em; color: rgba(255,255,255,0.25);
+                    border: 1px dashed rgba(255,255,255,0.12);
+                }
+
+                /* Feature 3: season badges on collapsed series header */
+                .mmc-season-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 6px; }
+                .mmc-season-chip {
+                    padding: 1px 6px; border-radius: 3px;
+                    background: rgba(239,68,68,0.18); color: #fca5a5;
+                    border: 1px solid rgba(239,68,68,0.35);
+                    font-size: 0.72em; font-weight: 500;
+                }
+                .mmc-season-chip.partial {
+                    background: rgba(251,191,36,0.15); color: #fcd34d;
+                    border-color: rgba(251,191,36,0.35);
+                }
+
+                /* Feature 1: "new since last scan" badges */
+                .mmc-new-badge {
+                    display: inline-block; padding: 1px 6px; border-radius: 3px;
+                    background: rgba(34,197,94,0.18); color: #86efac;
+                    border: 1px solid rgba(34,197,94,0.4);
+                    font-size: 0.72em; font-weight: 500; margin-left: 6px;
+                }
+                .mmc-row-new td { background: rgba(34,197,94,0.05); }
+
                 .mmc-body { overflow-x: auto; }
                 .mmc-body.collapsed { display: none; }
 
@@ -75,7 +110,15 @@
                     display: flex; align-items: center; gap: 8px;
                     padding: 5px 14px; background: rgba(0,0,0,0.2);
                     font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7;
+                    cursor: pointer; user-select: none;
                 }
+                .mmc-season-hdr:hover { background: rgba(0,0,0,0.32); opacity: 0.9; }
+                .mmc-season-chev {
+                    font-size: 0.75em; opacity: 0.7; min-width: 10px;
+                    transition: transform 0.15s ease;
+                }
+                .mmc-season-hdr.collapsed .mmc-season-chev { transform: rotate(-90deg); }
+                .mmc-season-body.collapsed { display: none; }
                 .mmc-full-season {
                     background: rgba(239,68,68,0.18); color: #fca5a5;
                     border: 1px solid rgba(239,68,68,0.35);
@@ -125,6 +168,22 @@
                 }
                 .mmc-jf-link:hover { background: rgba(170,92,195,0.12); text-decoration: none; }
 
+                .mmc-jw-link {
+                    color: #fbbf24; text-decoration: none;
+                    font-size: 0.78em; margin-left: 6px;
+                    padding: 1px 6px; border: 1px solid rgba(251,191,36,0.35);
+                    border-radius: 3px; white-space: nowrap;
+                }
+                .mmc-jw-link:hover { background: rgba(251,191,36,0.12); text-decoration: none; }
+
+                /* Feature 14: ignore buttons */
+                .mmc-ign-btn {
+                    color: #f87171; background: none; border: 1px solid rgba(248,113,113,0.3);
+                    border-radius: 3px; padding: 1px 6px; font-size: 0.72em;
+                    margin-left: 6px; cursor: pointer; opacity: 0.6;
+                }
+                .mmc-ign-btn:hover { opacity: 1; background: rgba(248,113,113,0.1); }
+
                 .mmc-pager { display: flex; gap: 6px; align-items: center; margin-top: 1.2em; flex-wrap: wrap; }
                 .mmc-pager button {
                     padding: 4px 10px; border-radius: 3px;
@@ -142,6 +201,17 @@
 
                 .mmc-progress-track { background: rgba(255,255,255,0.1); border-radius: 3px; height: 8px; overflow: hidden; }
                 .mmc-progress-bar   { height: 100%; width: 0%; background: #00a4dc; transition: width 0.5s ease; }
+
+                .mmc-ign-list { margin-top: 0.5em; font-size: 0.85em; }
+                .mmc-ign-item {
+                    display: inline-flex; align-items: center; gap: 6px;
+                    padding: 3px 8px; margin: 2px;
+                    background: rgba(255,255,255,0.04); border-radius: 3px;
+                }
+                .mmc-ign-item .rm {
+                    color: #f87171; cursor: pointer; background: none;
+                    border: none; font-size: 0.9em; padding: 0;
+                }
             </style>
 
             <div class="verticalSection">
@@ -152,6 +222,7 @@
             <div class="mmc-tabs">
                 <button type="button" class="mmc-tab active" data-tab="settings">Settings &amp; Scan</button>
                 <button type="button" class="mmc-tab" data-tab="report">Report</button>
+                <button type="button" class="mmc-tab" data-tab="ignores">Ignore list</button>
             </div>
 
             <!-- ══ Settings & Scan ══════════════════════════════════════════════ -->
@@ -205,6 +276,40 @@
                         <label class="emby-checkbox-label">
                             <input type="checkbox" id="mmcSkipFuture" is="emby-checkbox">
                             <span>Skip collection movies not yet released</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" id="mmcRecentOnly" is="emby-checkbox">
+                            <span>Recently-aired-only mode (show only titles within the window below)</span>
+                        </label>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="mmcRecentDays">Recently-aired window (days)</label>
+                        <input type="number" id="mmcRecentDays" class="emby-input" min="1" max="3650" value="30">
+                    </div>
+                </div>
+
+                <div class="verticalSection">
+                    <h3 class="sectionTitle">Performance / smart scan</h3>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" id="mmcIncremental" is="emby-checkbox">
+                            <span>Incremental (smart) scan — skip unchanged ended series</span>
+                        </label>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="mmcIncrHours">Re-check cached series after (hours)</label>
+                        <input type="number" id="mmcIncrHours" class="emby-input" min="1" max="8760" value="168">
+                    </div>
+                </div>
+
+                <div class="verticalSection">
+                    <h3 class="sectionTitle">Notifications</h3>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input type="checkbox" id="mmcNotify" is="emby-checkbox">
+                            <span>Post a Jellyfin activity entry when new missing items are found</span>
                         </label>
                     </div>
                 </div>
@@ -273,6 +378,7 @@
                         <select id="mmcSort">
                             <option value="count-desc">Most missing first</option>
                             <option value="count-asc">Fewest missing first</option>
+                            <option value="new-desc">Most new first</option>
                             <option value="date-desc">Newest air date first</option>
                             <option value="date-asc">Oldest air date first</option>
                             <option value="name-asc">Name A → Z</option>
@@ -282,7 +388,6 @@
                             <option value="25">25 per page</option>
                             <option value="50" selected>50 per page</option>
                             <option value="100">100 per page</option>
-                            <option value="0">All</option>
                         </select>
                         <button id="mmcExpandAll">Expand all</button>
                         <button id="mmcCollapseAll">Collapse all</button>
@@ -296,6 +401,17 @@
 
             </div><!-- /report panel -->
 
+            <!-- ══ Ignore list ═════════════════════════════════════════════════ -->
+            <div class="mmc-panel" data-panel="ignores" style="display:none;">
+                <div class="verticalSection">
+                    <h3 class="sectionTitle">Ignored items</h3>
+                    <p style="opacity:0.7;font-size:0.9em;">
+                        Entries here are excluded from the report on the next scan (and on cached results immediately).
+                    </p>
+                    <div id="mmcIgnLists"></div>
+                </div>
+            </div>
+
         </div><!-- /content-primary -->
     </div><!-- /data-role=content -->
 
@@ -308,11 +424,15 @@
     var PLUGIN_ID  = null;
     var pluginIdP  = null;
     var pollTimer  = null;
-    var allGroups  = [];
-    var filtered   = [];
     var page       = 1;
+    var pageSize   = 50;
+    var filterText = '';
+    var filterType = 'all';
+    var sortMode   = 'count-desc';
     var filterTimer = null;
     var reportLoaded = false;
+    var totalGroups  = 0;
+    var skippedCache = null;
 
     // ── Plugin ID resolution ───────────────────────────────────────────────────
     function getPluginId() {
@@ -333,8 +453,21 @@
     function apiGet(path) {
         return ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl(path), dataType: 'json' });
     }
-    function apiPost(path) {
-        return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl(path) });
+    function apiPost(path, body) {
+        var opts = { type: 'POST', url: ApiClient.getUrl(path) };
+        if (body !== undefined) {
+            opts.contentType = 'application/json';
+            opts.data        = JSON.stringify(body);
+            opts.dataType    = 'json';
+        }
+        return ApiClient.ajax(opts);
+    }
+    function apiPut(path, body) {
+        return ApiClient.ajax({
+            type: 'PUT', url: ApiClient.getUrl(path),
+            contentType: 'application/json',
+            data: JSON.stringify(body), dataType: 'json'
+        });
     }
 
     // ── DOM references ─────────────────────────────────────────────────────────
@@ -351,7 +484,8 @@
         pageEl.querySelectorAll('.mmc-panel').forEach(function (p) {
             p.style.display = p.getAttribute('data-panel') === name ? '' : 'none';
         });
-        if (name === 'report') loadReport();
+        if (name === 'report')  loadReport();
+        if (name === 'ignores') loadIgnores();
     }
 
     // ── Event delegation ───────────────────────────────────────────────────────
@@ -362,23 +496,65 @@
         if (t.closest && t.closest('#mmcSaveBtn'))     { ev.preventDefault(); doSave();  return; }
         if (t.closest && t.closest('#mmcScanBtn'))     { ev.preventDefault(); doScan();  return; }
         if (t.closest && t.closest('#mmcViewReport'))  { ev.preventDefault(); reportLoaded = false; showTab('report'); return; }
-        if (t.closest && t.closest('#mmcExpandAll'))   { pageEl.querySelectorAll('.mmc-body').forEach(function (b) { b.classList.remove('collapsed'); }); return; }
-        if (t.closest && t.closest('#mmcCollapseAll')) { pageEl.querySelectorAll('.mmc-body').forEach(function (b) { b.classList.add('collapsed');    }); return; }
+        if (t.closest && t.closest('#mmcExpandAll'))   {
+            pageEl.querySelectorAll('.mmc-body').forEach(function (b) { b.classList.remove('collapsed'); });
+            pageEl.querySelectorAll('.mmc-season-body').forEach(function (b) { b.classList.remove('collapsed'); });
+            pageEl.querySelectorAll('.mmc-season-hdr').forEach(function (h) { h.classList.remove('collapsed'); });
+            return;
+        }
+        if (t.closest && t.closest('#mmcCollapseAll')) {
+            pageEl.querySelectorAll('.mmc-body').forEach(function (b) { b.classList.add('collapsed'); });
+            pageEl.querySelectorAll('.mmc-season-body').forEach(function (b) { b.classList.add('collapsed'); });
+            pageEl.querySelectorAll('.mmc-season-hdr').forEach(function (h) { h.classList.add('collapsed'); });
+            return;
+        }
         if (t.closest && t.closest('#mmcDiagBtn'))     { ev.preventDefault(); doDiag(); return; }
+
+        // Ignore buttons (event-delegated on any .mmc-ign-btn inside report)
+        var ignBtn = t.closest && t.closest('.mmc-ign-btn');
+        if (ignBtn) {
+            ev.preventDefault(); ev.stopPropagation();
+            var payload = {
+                kind:             ignBtn.getAttribute('data-kind'),
+                tmdbSeriesId:     ignBtn.getAttribute('data-series') || null,
+                seasonNumber:     parseIntOrNull(ignBtn.getAttribute('data-season')),
+                episodeNumber:    parseIntOrNull(ignBtn.getAttribute('data-episode')),
+                tmdbCollectionId: parseIntOrNull(ignBtn.getAttribute('data-col')),
+                tmdbMovieId:      parseIntOrNull(ignBtn.getAttribute('data-movie'))
+            };
+            apiPost('MissingMedia/Ignores/Add', payload).then(function () {
+                Dashboard.alert('Added to ignore list. Will take effect on next report refresh.');
+                reportLoaded = false;
+                if (qs('[data-panel="report"]').style.display !== 'none') loadReport();
+            }).catch(function (err) {
+                Dashboard.alert('Failed to update ignore list: ' + (err && err.status ? 'HTTP ' + err.status : String(err)));
+            });
+            return;
+        }
     });
 
     pageEl.addEventListener('input', function (ev) {
         if (ev.target && ev.target.id === 'mmcFilter') {
             clearTimeout(filterTimer);
-            filterTimer = setTimeout(applyFilter, 250);
+            filterTimer = setTimeout(function () {
+                filterText = (qs('#mmcFilter').value || '').trim();
+                page = 1;
+                render();
+            }, 250);
         }
     });
     pageEl.addEventListener('change', function (ev) {
         if (!ev.target) return;
-        if (ev.target.id === 'mmcFilterType') { applyFilter(); return; }
-        if (ev.target.id === 'mmcSort')       { applyFilter(); return; }
-        if (ev.target.id === 'mmcPageSize')   { page = 1; render(); return; }
+        if (ev.target.id === 'mmcFilterType') { filterType = ev.target.value; page = 1; render(); return; }
+        if (ev.target.id === 'mmcSort')       { sortMode   = ev.target.value; page = 1; render(); return; }
+        if (ev.target.id === 'mmcPageSize')   { pageSize   = parseInt(ev.target.value, 10) || 50; page = 1; render(); return; }
     });
+
+    function parseIntOrNull(s) {
+        if (s === null || s === undefined || s === '') return null;
+        var n = parseInt(s, 10);
+        return isNaN(n) ? null : n;
+    }
 
     // ── Settings load / save ───────────────────────────────────────────────────
     function loadSettings() {
@@ -391,6 +567,11 @@
             qs('#mmcSpecials').checked    = !!cfg.IncludeSpecials;
             qs('#mmcSkipUnaired').checked = cfg.SkipUnairedEpisodes  !== false;
             qs('#mmcSkipFuture').checked  = cfg.SkipFutureMovies     !== false;
+            qs('#mmcRecentOnly').checked  = !!cfg.RecentlyAiredOnly;
+            qs('#mmcRecentDays').value    = cfg.RecentlyAiredDays || 30;
+            qs('#mmcIncremental').checked = cfg.EnableIncrementalScan !== false;
+            qs('#mmcIncrHours').value     = cfg.IncrementalMinAgeHours || 168;
+            qs('#mmcNotify').checked      = cfg.EnableNotifications   !== false;
         }).catch(function (err) {
             console.error('[MissingMediaChecker] loadSettings failed', err);
         });
@@ -402,12 +583,17 @@
             pid = id;
             return ApiClient.getPluginConfiguration(id);
         }).then(function (cfg) {
-            cfg.TmdbApiKey            = qs('#mmcApiKey').value.trim();
-            cfg.CheckTvSeries         = qs('#mmcCheckTv').checked;
-            cfg.CheckMovieCollections = qs('#mmcCheckCol').checked;
-            cfg.IncludeSpecials       = qs('#mmcSpecials').checked;
-            cfg.SkipUnairedEpisodes   = qs('#mmcSkipUnaired').checked;
-            cfg.SkipFutureMovies      = qs('#mmcSkipFuture').checked;
+            cfg.TmdbApiKey             = qs('#mmcApiKey').value.trim();
+            cfg.CheckTvSeries          = qs('#mmcCheckTv').checked;
+            cfg.CheckMovieCollections  = qs('#mmcCheckCol').checked;
+            cfg.IncludeSpecials        = qs('#mmcSpecials').checked;
+            cfg.SkipUnairedEpisodes    = qs('#mmcSkipUnaired').checked;
+            cfg.SkipFutureMovies       = qs('#mmcSkipFuture').checked;
+            cfg.RecentlyAiredOnly      = qs('#mmcRecentOnly').checked;
+            cfg.RecentlyAiredDays      = parseInt(qs('#mmcRecentDays').value, 10) || 30;
+            cfg.EnableIncrementalScan  = qs('#mmcIncremental').checked;
+            cfg.IncrementalMinAgeHours = parseInt(qs('#mmcIncrHours').value, 10) || 168;
+            cfg.EnableNotifications    = qs('#mmcNotify').checked;
             return ApiClient.updatePluginConfiguration(pid, cfg);
         }).then(function (result) {
             if (typeof Dashboard !== 'undefined' && Dashboard.processPluginConfigurationUpdateResult) {
@@ -451,7 +637,6 @@
                 qs('#mmcDone').style.display      = 'block';
                 reportLoaded = false;
                 refreshLastScan();
-                // If the user is already viewing the report, reload it now.
                 var repPanel = qs('[data-panel="report"]');
                 if (repPanel && repPanel.style.display !== 'none') loadReport();
                 return;
@@ -475,7 +660,7 @@
         }).catch(function () {});
     }
 
-    // ── Report ─────────────────────────────────────────────────────────────────
+    // ── Report (feature 26: summary + paginated groups) ───────────────────────
     function loadReport() {
         if (reportLoaded) return;
         reportLoaded = true;
@@ -484,52 +669,39 @@
         qs('#mmcRepErr').style.display  = 'none';
         qs('#mmcRepMain').style.display = 'none';
 
-        apiGet('MissingMedia/Results').then(function (data) {
+        apiGet('MissingMedia/Results/Summary').then(function (data) {
             qs('#mmcRepLoad').style.display = 'none';
-
-            if (!data) {
+            if (!data || !data.hasResults) {
                 showRepErr('No scan results yet — run a scan from the Settings tab.');
                 return;
             }
 
             // Summary cards
             var skipped = data.seriesSkippedNoId || 0;
-            qs('#mmcSummary').innerHTML =
-                card(data.totalSeriesInLibrary    || 0, 'series in library',        false) +
-                card(data.totalSeriesChecked      || 0, 'series checked via TMDB',  false) +
-                (skipped > 0 ? card(skipped, 'series skipped (no ID)', true) : '') +
-                card(data.totalCollectionsChecked || 0, 'collections checked',      false) +
-                card(data.seriesWithMissing       || 0, 'series incomplete',        (data.seriesWithMissing       || 0) > 0) +
-                card(data.collectionsWithMissing  || 0, 'incomplete collections',   (data.collectionsWithMissing  || 0) > 0) +
-                card(data.totalMissingEpisodes    || 0, 'missing episodes',         (data.totalMissingEpisodes    || 0) > 0) +
-                card(data.totalMissingMovies      || 0, 'missing movies',           (data.totalMissingMovies      || 0) > 0);
+            var nEps    = data.newMissingEpisodes || 0;
+            var nMov    = data.newMissingMovies   || 0;
+            var cards   = [];
+            cards.push(card(data.totalSeriesInLibrary    || 0, 'series in library',        false));
+            cards.push(card(data.totalSeriesChecked      || 0, 'series checked via TMDB',  false));
+            if (skipped > 0) cards.push(card(skipped, 'series skipped (no ID)', true));
+            cards.push(card(data.totalCollectionsChecked || 0, 'collections checked',      false));
+            cards.push(card(data.seriesWithMissing       || 0, 'series incomplete',        (data.seriesWithMissing       || 0) > 0));
+            cards.push(card(data.collectionsWithMissing  || 0, 'incomplete collections',   (data.collectionsWithMissing  || 0) > 0));
+            cards.push(card(data.totalMissingEpisodes    || 0, 'missing episodes',         (data.totalMissingEpisodes    || 0) > 0));
+            cards.push(card(data.totalMissingMovies      || 0, 'missing movies',           (data.totalMissingMovies      || 0) > 0));
+            if (nEps > 0) cards.push(cardNew(nEps, 'new since last scan (ep)'));
+            if (nMov > 0) cards.push(cardNew(nMov, 'new since last scan (mov)'));
+            if ((data.incrementalCacheHits || 0) > 0)
+                cards.push(card(data.incrementalCacheHits, 'cache hits (smart scan)', false));
 
-            allGroups = [];
-            (data.missingSeries || []).forEach(function (s) {
-                if ((s.missingCount || 0) > 0)
-                    allGroups.push({
-                        type: 'tv',
-                        name: s.seriesName || '',
-                        count: s.missingCount || 0,
-                        latestDate: latestDateOf(s.missingEpisodes || [], 'airDate'),
-                        data: s
-                    });
-            });
-            (data.missingCollections || []).forEach(function (c) {
-                if ((c.missingCount || 0) > 0)
-                    allGroups.push({
-                        type: 'movie',
-                        name: c.collectionName || '',
-                        count: c.missingCount || 0,
-                        latestDate: latestDateOf(c.missingMovies || [], 'releaseDate'),
-                        data: c
-                    });
-            });
+            qs('#mmcSummary').innerHTML = cards.join('');
 
-            renderSkipped(data.skippedSeries || []);
+            totalGroups  = data.totalGroups || 0;
+            skippedCache = data.skippedSeries || [];
+            renderSkipped(skippedCache);
 
             qs('#mmcRepMain').style.display = 'block';
-            applyFilter();
+            render();
 
         }).catch(function (err) {
             qs('#mmcRepLoad').style.display = 'none';
@@ -544,6 +716,12 @@
             '<div class="mmc-card-lbl">' + esc(lbl) + '</div>' +
             '</div>';
     }
+    function cardNew(num, lbl) {
+        return '<div class="mmc-card">' +
+            '<div class="mmc-card-num new">+' + num + '</div>' +
+            '<div class="mmc-card-lbl">' + esc(lbl) + '</div>' +
+            '</div>';
+    }
 
     function showRepErr(msg) {
         var el = qs('#mmcRepErr');
@@ -551,68 +729,36 @@
         el.style.display = 'block';
     }
 
-    // ── Filter, sort & pagination ──────────────────────────────────────────────
-    function latestDateOf(items, field) {
-        var best = 0;
-        items.forEach(function (it) {
-            var v = it[field];
-            if (v) { var t = new Date(v).getTime(); if (t > best) best = t; }
-        });
-        return best;
-    }
-
-    function applyFilter() {
-        var text = (qs('#mmcFilter').value || '').toLowerCase().trim();
-        var type = qs('#mmcFilterType').value || 'all';
-        var sort = (qs('#mmcSort') && qs('#mmcSort').value) || 'count-desc';
-
-        filtered = allGroups.filter(function (g) {
-            if (type !== 'all' && g.type !== type) return false;
-            if (text && g.name.toLowerCase().indexOf(text) === -1) return false;
-            return true;
-        });
-
-        filtered.sort(function (a, b) {
-            switch (sort) {
-                case 'count-asc':  return a.count - b.count;
-                case 'count-desc': return b.count - a.count;
-                case 'date-desc':  return b.latestDate - a.latestDate;
-                case 'date-asc':   return a.latestDate - b.latestDate;
-                case 'name-asc':   return a.name.localeCompare(b.name);
-                case 'name-desc':  return b.name.localeCompare(a.name);
-                default:           return b.count - a.count;
-            }
-        });
-
-        page = 1;
-        render();
-    }
-
-    function getPageSize() {
-        var v = parseInt(qs('#mmcPageSize').value || '50', 10);
-        return v === 0 ? Math.max(filtered.length, 1) : v;
-    }
-
+    // Fetch one page of groups from the backend. Server does filter/sort/
+    // pagination so the client never holds the full result set in memory.
     function render() {
-        var ps    = getPageSize();
-        var pages = Math.max(1, Math.ceil(filtered.length / ps));
-        page      = Math.min(Math.max(page, 1), pages);
+        var params = 'type=' + encodeURIComponent(filterType) +
+                     '&sort=' + encodeURIComponent(sortMode) +
+                     '&page=' + page +
+                     '&pageSize=' + pageSize;
+        if (filterText) params += '&search=' + encodeURIComponent(filterText);
 
-        var start = (page - 1) * ps;
-        var slice = filtered.slice(start, start + ps);
-
-        var box = qs('#mmcGroups');
-        box.innerHTML = '';
-        if (slice.length === 0) {
-            box.innerHTML = '<div class="mmc-empty">No results match the current filter.</div>';
-        } else {
-            slice.forEach(function (g) {
-                box.appendChild(g.type === 'tv'
-                    ? makeSeriesGroup(g.data)
-                    : makeCollectionGroup(g.data));
-            });
-        }
-        renderPager(pages, ps);
+        apiGet('MissingMedia/Results/Groups?' + params).then(function (data) {
+            var box = qs('#mmcGroups');
+            box.innerHTML = '';
+            var groups = (data && data.groups) || [];
+            if (groups.length === 0) {
+                box.innerHTML = '<div class="mmc-empty">No results match the current filter.</div>';
+            } else {
+                groups.forEach(function (g) {
+                    box.appendChild(g.type === 'tv'
+                        ? makeSeriesGroup(g.series)
+                        : makeCollectionGroup(g.collection));
+                });
+            }
+            var total = (data && data.total) || 0;
+            var pages = Math.max(1, Math.ceil(total / pageSize));
+            renderPager(pages, total);
+        }).catch(function (err) {
+            qs('#mmcGroups').innerHTML =
+                '<div class="mmc-err">Failed to load groups (' +
+                (err && err.status ? 'HTTP ' + err.status : String(err)) + ')</div>';
+        });
     }
 
     // ── Jellyfin deep-link helper ──────────────────────────────────────────────
@@ -625,6 +771,19 @@
         var url = jellyfinUrl(itemId);
         if (!url) return '';
         return '<a class="mmc-jf-link" href="' + url + '" target="_blank" title="Open in Jellyfin">Jellyfin &#8599;</a>';
+    }
+    function justWatchLink(kind, tmdbId) {
+        if (!tmdbId) return '';
+        var url = 'https://www.themoviedb.org/' + kind + '/' + tmdbId + '/watch';
+        return '<a class="mmc-jw-link" href="' + url + '" target="_blank" ' +
+               'title="Watch providers (JustWatch via TMDB)">JustWatch &#8599;</a>';
+    }
+
+    // Poster helper — returns either an <img> from TMDB w92 or a placeholder.
+    function posterThumb(path) {
+        if (!path) return '<div class="mmc-hdr-poster placeholder">no art</div>';
+        return '<img class="mmc-hdr-poster" loading="lazy" alt="" ' +
+               'src="https://image.tmdb.org/t/p/w92' + esc(path) + '">';
     }
 
     // ── Group builders ─────────────────────────────────────────────────────────
@@ -642,36 +801,74 @@
         var missingSeasonsSet = {};
         (series.missingSeasons || []).forEach(function (s) { missingSeasonsSet[s] = true; });
 
-        Object.keys(bySeason).sort(function (a, b) { return +a - +b; }).forEach(function (sn) {
+        // Feature 3: season chips for the collapsed header
+        var seasonNums = Object.keys(bySeason).map(function (k) { return +k; }).sort(function (a,b){return a-b;});
+        var chipsHtml = seasonNums.length
+            ? ' <span class="mmc-season-chips">' + seasonNums.map(function (sn) {
+                var full = !!missingSeasonsSet[sn];
+                return '<span class="mmc-season-chip' + (full ? '' : ' partial') + '" title="' +
+                    (full ? 'Complete season missing' : (bySeason[sn].length + ' missing')) +
+                    '">S' + sn + '</span>';
+              }).join('') + '</span>'
+            : '';
+
+        seasonNums.forEach(function (sn) {
             var eps = bySeason[sn];
-            var fullBadge = missingSeasonsSet[+sn]
+            var isFullMissing = !!missingSeasonsSet[+sn];
+            var fullBadge = isFullMissing
                 ? '<span class="mmc-full-season">&#9888; Complete season missing</span>'
                 : '';
-            bodyHtml += '<div class="mmc-season-hdr"><span>Season ' + sn +
-                        ' &mdash; ' + eps.length + ' missing</span>' + fullBadge + '</div>';
-            bodyHtml += '<table class="mmc-table"><thead><tr>' +
-                '<th>Episode</th><th>Title</th><th>Air Date</th><th>Overview</th><th>TMDB</th>' +
-                '</tr></thead><tbody>';
+            var ignSeasonBtn = '<button class="mmc-ign-btn" data-kind="season" ' +
+                'data-series="' + esc(series.tmdbId || '') + '" data-season="' + sn + '" ' +
+                'title="Ignore this whole season">ignore</button>';
+            var collapseCls = isFullMissing ? ' collapsed' : '';
+            bodyHtml +=
+                '<div class="mmc-season">' +
+                    '<div class="mmc-season-hdr' + collapseCls + '">' +
+                        '<span class="mmc-season-chev">&#9660;</span>' +
+                        '<span>Season ' + sn + ' &mdash; ' + eps.length + ' missing</span>' +
+                        fullBadge + ignSeasonBtn +
+                    '</div>' +
+                    '<div class="mmc-season-body' + collapseCls + '">' +
+                        '<table class="mmc-table"><thead><tr>' +
+                            '<th>Episode</th><th>Title</th><th>Air Date</th><th>Overview</th><th>TMDB</th><th></th>' +
+                        '</tr></thead><tbody>';
             eps.forEach(function (ep) {
                 var epUrl = 'https://www.themoviedb.org/tv/' + series.tmdbId +
                             '/season/' + ep.seasonNumber + '/episode/' + ep.episodeNumber;
+                var newBadge = ep.isNew ? '<span class="mmc-new-badge">NEW</span>' : '';
+                var ignEpBtn = '<button class="mmc-ign-btn" data-kind="episode" ' +
+                    'data-series="' + esc(series.tmdbId || '') + '" ' +
+                    'data-season="' + ep.seasonNumber + '" data-episode="' + ep.episodeNumber + '" ' +
+                    'title="Ignore this episode">ignore</button>';
                 bodyHtml +=
-                    '<tr>' +
-                    '<td style="white-space:nowrap">S' + pad(ep.seasonNumber) + 'E' + pad(ep.episodeNumber) + '</td>' +
+                    '<tr class="' + (ep.isNew ? 'mmc-row-new' : '') + '">' +
+                    '<td style="white-space:nowrap">S' + pad(ep.seasonNumber) + 'E' + pad(ep.episodeNumber) + newBadge + '</td>' +
                     '<td>' + esc(ep.episodeName || '&mdash;') + '</td>' +
                     '<td style="white-space:nowrap;opacity:.7">' + (ep.airDate || '&mdash;') + '</td>' +
                     '<td class="mmc-overview">' + esc(ep.overview || '') + '</td>' +
                     '<td><a class="mmc-tmdb-link" href="' + epUrl + '" target="_blank">&#8599;</a></td>' +
+                    '<td>' + ignEpBtn + '</td>' +
                     '</tr>';
             });
-            bodyHtml += '</tbody></table>';
+            bodyHtml += '</tbody></table></div></div>';
         });
+
+        var newCount   = series.newMissingCount || 0;
+        var newHdr     = newCount > 0 ? ' <span class="mmc-new-badge">+' + newCount + ' new</span>' : '';
+        var ignSeriesBtn = '<button class="mmc-ign-btn" data-kind="series" ' +
+            'data-series="' + esc(series.tmdbId || '') + '" title="Ignore this whole series">ignore series</button>';
 
         var titleHtml =
             '<a class="mmc-tmdb-link" href="' + tmdbUrl + '" target="_blank">' + esc(series.seriesName) + '</a>' +
-            jellyfinLink(series.jellyfinId);
+            jellyfinLink(series.jellyfinId) +
+            justWatchLink('tv', series.tmdbId) +
+            newHdr +
+            chipsHtml +
+            ignSeriesBtn;
 
         return makeGroup(
+            posterThumb(series.posterPath),
             '<span class="mmc-badge mmc-badge-tv">TV</span>',
             titleHtml,
             series.missingCount + ' missing / ' + series.totalEpisodesOnTmdb + ' on TMDB',
@@ -682,28 +879,39 @@
     function makeCollectionGroup(col) {
         var colUrl   = 'https://www.themoviedb.org/collection/' + col.tmdbCollectionId;
         var bodyHtml = '<table class="mmc-table"><thead><tr>' +
-            '<th>Title</th><th>Year</th><th>Rating</th><th>Overview</th><th>TMDB</th>' +
+            '<th>Title</th><th>Year</th><th>Rating</th><th>Overview</th><th>TMDB</th><th></th>' +
             '</tr></thead><tbody>';
 
         (col.missingMovies || []).forEach(function (m) {
             var mUrl   = 'https://www.themoviedb.org/movie/' + m.tmdbId;
             var rating = m.voteAverage ? '&#9733; ' + (+m.voteAverage).toFixed(1) : '&mdash;';
+            var newBadge = m.isNew ? '<span class="mmc-new-badge">NEW</span>' : '';
+            var ignMovieBtn = '<button class="mmc-ign-btn" data-kind="movie" ' +
+                'data-movie="' + m.tmdbId + '" title="Ignore this movie">ignore</button>';
             bodyHtml +=
-                '<tr>' +
-                '<td><strong>' + esc(m.title) + '</strong></td>' +
+                '<tr class="' + (m.isNew ? 'mmc-row-new' : '') + '">' +
+                '<td><strong>' + esc(m.title) + '</strong>' + newBadge + justWatchLink('movie', m.tmdbId) + '</td>' +
                 '<td style="white-space:nowrap;opacity:.7">' + (m.year || '&mdash;') + '</td>' +
                 '<td style="white-space:nowrap;opacity:.7">' + rating + '</td>' +
                 '<td class="mmc-overview">' + esc(m.overview || '') + '</td>' +
                 '<td><a class="mmc-tmdb-link" href="' + mUrl + '" target="_blank">&#8599;</a></td>' +
+                '<td>' + ignMovieBtn + '</td>' +
                 '</tr>';
         });
         bodyHtml += '</tbody></table>';
 
+        var newCount = col.newMissingCount || 0;
+        var newHdr   = newCount > 0 ? ' <span class="mmc-new-badge">+' + newCount + ' new</span>' : '';
+        var ignColBtn = '<button class="mmc-ign-btn" data-kind="collection" ' +
+            'data-col="' + col.tmdbCollectionId + '" title="Ignore this collection">ignore collection</button>';
+
         var titleHtml =
             '<a class="mmc-tmdb-link" href="' + colUrl + '" target="_blank">' + esc(col.collectionName) + '</a>' +
-            jellyfinLink(col.jellyfinCollectionId);
+            jellyfinLink(col.jellyfinCollectionId) +
+            newHdr + ignColBtn;
 
         return makeGroup(
+            posterThumb(col.posterPath),
             '<span class="mmc-badge mmc-badge-movie">Collection</span>',
             titleHtml,
             col.missingCount + ' missing / ' + col.totalMoviesInCollection + ' in collection',
@@ -711,13 +919,13 @@
         );
     }
 
-    function makeGroup(badge, title, meta, bodyHtml) {
+    function makeGroup(posterHtml, badge, title, meta, bodyHtml) {
         var wrap = document.createElement('div');
         wrap.className = 'mmc-group';
 
         var hdr = document.createElement('div');
         hdr.className = 'mmc-hdr';
-        hdr.innerHTML = badge +
+        hdr.innerHTML = posterHtml + badge +
             '<span class="mmc-hdr-title">' + title + '</span>' +
             '<span class="mmc-hdr-meta">'  + meta  + '</span>';
 
@@ -725,24 +933,42 @@
         body.className = 'mmc-body collapsed';
         body.innerHTML = bodyHtml;
 
-        hdr.addEventListener('click', function () { body.classList.toggle('collapsed'); });
+        hdr.addEventListener('click', function (ev) {
+            // Let ignore buttons fire without toggling the group.
+            if (ev.target && ev.target.closest && ev.target.closest('.mmc-ign-btn')) return;
+            if (ev.target && ev.target.tagName === 'A') return;
+            body.classList.toggle('collapsed');
+        });
+
+        body.addEventListener('click', function (ev) {
+            if (ev.target && ev.target.closest && ev.target.closest('.mmc-ign-btn')) return;
+            var seasonHdr = ev.target && ev.target.closest && ev.target.closest('.mmc-season-hdr');
+            if (!seasonHdr || !body.contains(seasonHdr)) return;
+            var seasonBody = seasonHdr.nextElementSibling;
+            if (!seasonBody) return;
+            var isCollapsed = seasonBody.classList.toggle('collapsed');
+            seasonHdr.classList.toggle('collapsed', isCollapsed);
+        });
+
         wrap.appendChild(hdr);
         wrap.appendChild(body);
         return wrap;
     }
 
     // ── Pagination ─────────────────────────────────────────────────────────────
-    function renderPager(pages, ps) {
+    function renderPager(pages, total) {
         var pager = qs('#mmcPager');
         pager.innerHTML = '';
-        if (pages <= 1) return;
+        if (pages <= 1 && total === 0) return;
 
-        var s    = (page - 1) * ps + 1;
-        var e    = Math.min(page * ps, filtered.length);
+        var s    = (page - 1) * pageSize + 1;
+        var e    = Math.min(page * pageSize, total);
         var info = document.createElement('span');
         info.className   = 'pinfo';
-        info.textContent = s + '\u2013' + e + ' of ' + filtered.length;
+        info.textContent = total === 0 ? '0 results' : (s + '\u2013' + e + ' of ' + total);
         pager.appendChild(info);
+
+        if (pages <= 1) return;
 
         function btn(label, target) {
             var b = document.createElement('button');
@@ -760,7 +986,7 @@
 
     // ── Utilities ──────────────────────────────────────────────────────────────
     function esc(s) {
-        return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        return (s || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
     function pad(n) { return n < 10 ? '0' + n : String(n); }
 
@@ -795,6 +1021,96 @@
             var chev = qs('#mmcSkippedChev');
             var collapsed = body.classList.toggle('collapsed');
             chev.textContent = collapsed ? '\u25B6' : '\u25BC';
+        });
+    }
+
+    // ── Ignore list panel (feature 14) ────────────────────────────────────────
+    function loadIgnores() {
+        apiGet('MissingMedia/Ignores').then(function (list) {
+            renderIgnores(list || {});
+        }).catch(function (err) {
+            qs('#mmcIgnLists').innerHTML =
+                '<div class="mmc-err">Failed to load ignore list: ' +
+                (err && err.status ? 'HTTP ' + err.status : String(err)) + '</div>';
+        });
+    }
+    function renderIgnores(list) {
+        var box = qs('#mmcIgnLists');
+        var html = '';
+        function section(title, items) {
+            html += '<h4 style="margin:1em 0 0.3em;">' + esc(title) + '</h4>';
+            html += '<div class="mmc-ign-list">';
+            if (!items || items.length === 0) {
+                html += '<span style="opacity:.5">(none)</span>';
+            } else {
+                items.forEach(function (it) {
+                    html += '<span class="mmc-ign-item">' + esc(it.label) +
+                        ' <button class="rm" data-kind="' + it.kind +
+                        '" data-series="' + esc(it.seriesId || '') + '"' +
+                        ' data-season="' + (it.season || '') + '"' +
+                        ' data-episode="' + (it.episode || '') + '"' +
+                        ' data-col="' + (it.col || '') + '"' +
+                        ' data-movie="' + (it.movie || '') + '">&#10005;</button></span>';
+                });
+            }
+            html += '</div>';
+        }
+
+        var seriesItems = (list.seriesTmdbIds || []).map(function (id) {
+            return { kind: 'series', seriesId: id, label: 'Series TMDB ' + id };
+        });
+        var seasonItems = [];
+        Object.keys(list.seasons || {}).forEach(function (sid) {
+            (list.seasons[sid] || []).forEach(function (sn) {
+                seasonItems.push({ kind: 'season', seriesId: sid, season: sn,
+                                   label: 'Series ' + sid + ' · S' + sn });
+            });
+        });
+        var epItems = [];
+        Object.keys(list.episodes || {}).forEach(function (sid) {
+            (list.episodes[sid] || []).forEach(function (key) {
+                // Key is SxxExx
+                var m = /^S(\d+)E(\d+)$/.exec(key);
+                if (m) {
+                    epItems.push({ kind: 'episode', seriesId: sid,
+                                   season: +m[1], episode: +m[2],
+                                   label: 'Series ' + sid + ' · ' + key });
+                }
+            });
+        });
+        var colItems = (list.collectionTmdbIds || []).map(function (id) {
+            return { kind: 'collection', col: id, label: 'Collection TMDB ' + id };
+        });
+        var movieItems = (list.movieTmdbIds || []).map(function (id) {
+            return { kind: 'movie', movie: id, label: 'Movie TMDB ' + id };
+        });
+
+        section('Series',      seriesItems);
+        section('Seasons',     seasonItems);
+        section('Episodes',    epItems);
+        section('Collections', colItems);
+        section('Movies',      movieItems);
+
+        box.innerHTML = html;
+
+        // Delegate remove buttons
+        box.querySelectorAll('button.rm').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var payload = {
+                    kind:             b.getAttribute('data-kind'),
+                    tmdbSeriesId:     b.getAttribute('data-series') || null,
+                    seasonNumber:     parseIntOrNull(b.getAttribute('data-season')),
+                    episodeNumber:    parseIntOrNull(b.getAttribute('data-episode')),
+                    tmdbCollectionId: parseIntOrNull(b.getAttribute('data-col')),
+                    tmdbMovieId:      parseIntOrNull(b.getAttribute('data-movie'))
+                };
+                apiPost('MissingMedia/Ignores/Remove', payload).then(function (newList) {
+                    renderIgnores(newList || {});
+                    reportLoaded = false;
+                }).catch(function () {
+                    Dashboard.alert('Remove failed.');
+                });
+            });
         });
     }
 

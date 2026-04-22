@@ -14,12 +14,18 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
         : base(applicationPaths, xmlSerializer)
     {
-        Instance    = this;
-        ResultsPath = Path.Combine(applicationPaths.DataPath, "missingmediachecker_results.json");
+        Instance             = this;
+        ResultsPath          = Path.Combine(applicationPaths.DataPath, "missingmediachecker_results.json");
+        PreviousResultsPath  = Path.Combine(applicationPaths.DataPath, "missingmediachecker_previous_results.json");
+        IgnoreListPath       = Path.Combine(applicationPaths.DataPath, "missingmediachecker_ignores.json");
+        IncrementalCachePath = Path.Combine(applicationPaths.DataPath, "missingmediachecker_incremental.json");
     }
 
     public static Plugin? Instance    { get; private set; }
-    public static string   ResultsPath { get; private set; } = string.Empty;
+    public static string   ResultsPath          { get; private set; } = string.Empty;
+    public static string   PreviousResultsPath  { get; private set; } = string.Empty;
+    public static string   IgnoreListPath       { get; private set; } = string.Empty;
+    public static string   IncrementalCachePath { get; private set; } = string.Empty;
 
     public override string Name        => "MissingMediaChecker";
     public override Guid   Id          => Guid.Parse("9b8e1c4a-2d3f-4e5b-a6c7-d8e9f0a1b2c3");

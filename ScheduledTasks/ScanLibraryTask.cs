@@ -4,12 +4,15 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.MissingMediaChecker.Configuration;
 using Jellyfin.Plugin.MissingMediaChecker.Models;
 using Jellyfin.Plugin.MissingMediaChecker.Services;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Activity;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jellyfin.Plugin.MissingMediaChecker.ScheduledTasks;
 
@@ -19,9 +22,6 @@ public class ScanLibraryTask : IScheduledTask
     {
         WriteIndented               = false,
         PropertyNamingPolicy        = JsonNamingPolicy.CamelCase,
-        // [JsonPropertyName] attributes on the model take priority over the
-        // naming policy, so reading back the camelCase disk file works correctly
-        // even without this flag — but it is cheap insurance.
         PropertyNameCaseInsensitive = true
     };
 
@@ -33,13 +33,21 @@ public class ScanLibraryTask : IScheduledTask
     internal static string           ProgressMsg    { get; private set; } = string.Empty;
     internal static string?          LastError      { get; private set; }
 
-    private readonly ILibraryManager         _library;
+    private readonly ILibraryManager          _library;
     private readonly ILogger<ScanLibraryTask> _logger;
+    private readonly IActivityManager?        _activityManager;
 
-    public ScanLibraryTask(ILibraryManager library, ILogger<ScanLibraryTask> logger)
+    // Jellyfin's DI will hand us the activity manager when registering the
+    // scheduled task. The controller-side fire-and-forget path creates
+    // instances without DI, so activityManager is optional.
+    public ScanLibraryTask(
+        ILibraryManager library,
+        ILogger<ScanLibraryTask> logger,
+        IActivityManager? activityManager = null)
     {
-        _library = library;
-        _logger  = logger;
+        _library         = library;
+        _logger          = logger;
+        _activityManager = activityManager;
         TryLoadResults();
     }
 
@@ -67,6 +75,11 @@ public class ScanLibraryTask : IScheduledTask
 
         try
         {
+            // Load prior results and incremental cache for diff + smart-scan.
+            var previousResults    = LastResults;
+            var ignoreList         = IgnoreListStore.Load(Plugin.IgnoreListPath);
+            var incrementalCache   = IncrementalCacheStore.Load(Plugin.IncrementalCachePath);
+
             var detector = new MissingMediaDetector(_library, _logger);
             var composite = new Progress<(double pct, string msg)>(p =>
             {
@@ -82,10 +95,42 @@ public class ScanLibraryTask : IScheduledTask
                 cfg.IncludeSpecials,
                 cfg.SkipUnairedEpisodes,
                 cfg.SkipFutureMovies,
+                cfg.RecentlyAiredOnly,
+                cfg.RecentlyAiredDays,
+                cfg.EnableIncrementalScan,
+                cfg.IncrementalMinAgeHours,
+                previousResults,
+                ignoreList,
+                incrementalCache,
                 composite,
                 ct).ConfigureAwait(false);
 
             Commit(results);
+            IncrementalCacheStore.Save(Plugin.IncrementalCachePath, incrementalCache);
+
+            // Feature 28: fire a Jellyfin activity entry when something new
+            // showed up. Suppressed when nothing changed to avoid log spam.
+            if (cfg.EnableNotifications &&
+                _activityManager is not null &&
+                (results.NewMissingEpisodes + results.NewMissingMovies) > 0)
+            {
+                try
+                {
+                    var entry = new ActivityLog(
+                        name: "Missing Media Checker",
+                        type: "PluginNotification",
+                        userId: Guid.Empty)
+                    {
+                        Overview      = $"{results.NewMissingEpisodes} new missing episode(s), {results.NewMissingMovies} new missing movie(s).",
+                        ShortOverview = $"+{results.NewMissingEpisodes} ep / +{results.NewMissingMovies} mov",
+                    };
+                    await _activityManager.CreateAsync(entry).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "MissingMediaChecker: activity notification failed (non-fatal)");
+                }
+            }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -114,6 +159,21 @@ public class ScanLibraryTask : IScheduledTask
 
     private static void Commit(ScanResults results)
     {
+        // Rotate: move current results.json → previous_results.json before
+        // overwriting. Lets the next scan compute the IsNew diff and lets the
+        // UI show a "since last scan" view.
+        try
+        {
+            if (File.Exists(Plugin.ResultsPath))
+            {
+                File.Copy(Plugin.ResultsPath, Plugin.PreviousResultsPath, overwrite: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"MissingMediaChecker: failed to rotate previous results — {ex.Message}");
+        }
+
         LastResults = results;
         LastRunAt   = results.ScanTime;
         try

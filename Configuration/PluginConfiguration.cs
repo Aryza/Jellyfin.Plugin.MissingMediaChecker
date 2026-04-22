@@ -18,4 +18,41 @@ public class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Skip collection movies whose release date is in the future.</summary>
     public bool SkipFutureMovies { get; set; } = true;
+
+    // ── Feature 16: incremental / smart scan ──────────────────────────────────
+
+    /// <summary>
+    /// When enabled, the detector skips the TMDB round-trip for "Ended" series
+    /// whose Jellyfin library content hasn't changed since the last scan, and
+    /// re-uses the prior report. Cuts a second full scan of a large TV library
+    /// to near-zero API calls.
+    /// </summary>
+    public bool EnableIncrementalScan { get; set; } = true;
+
+    /// <summary>
+    /// Even with EnableIncrementalScan, every series is re-checked once per this
+    /// interval regardless of fingerprint match (safety-net to pick up TMDB
+    /// edits, status flips, etc.). Hours.
+    /// </summary>
+    public int IncrementalMinAgeHours { get; set; } = 168; // one week
+
+    // ── Feature 19: recently-aired only ───────────────────────────────────────
+
+    /// <summary>
+    /// When enabled, only missing episodes/movies whose air/release date falls
+    /// within the last <see cref="RecentlyAiredDays"/> days are reported.
+    /// Useful for a "what's new that I'm missing" view.
+    /// </summary>
+    public bool RecentlyAiredOnly { get; set; } = false;
+
+    /// <summary>Window (in days) for the RecentlyAiredOnly filter.</summary>
+    public int RecentlyAiredDays { get; set; } = 30;
+
+    // ── Feature 28: Jellyfin notifications ────────────────────────────────────
+
+    /// <summary>
+    /// Fire a Jellyfin notification after each successful scan that found at
+    /// least one new missing episode or movie.
+    /// </summary>
+    public bool EnableNotifications { get; set; } = true;
 }

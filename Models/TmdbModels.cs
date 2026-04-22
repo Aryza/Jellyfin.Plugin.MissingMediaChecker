@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Jellyfin.Plugin.MissingMediaChecker.Models;
@@ -10,6 +11,7 @@ public class TmdbSeriesDetails
     [JsonPropertyName("id")]               public int    Id              { get; set; }
     [JsonPropertyName("name")]             public string Name            { get; set; } = string.Empty;
     [JsonPropertyName("status")]           public string? Status         { get; set; }
+    [JsonPropertyName("poster_path")]      public string? PosterPath     { get; set; }
     [JsonPropertyName("number_of_seasons")]  public int  NumberOfSeasons  { get; set; }
     [JsonPropertyName("number_of_episodes")] public int  NumberOfEpisodes { get; set; }
     [JsonPropertyName("seasons")]          public List<TmdbSeasonSummary> Seasons { get; set; } = new();
@@ -30,6 +32,17 @@ public class TmdbSeasonDetails
     [JsonPropertyName("season_number")] public int    SeasonNumber { get; set; }
     [JsonPropertyName("name")]          public string? Name        { get; set; }
     [JsonPropertyName("episodes")]      public List<TmdbEpisode> Episodes { get; set; } = new();
+}
+
+/// <summary>
+/// A /tv/{id} response with an append_to_response clause. Season detail blocks
+/// arrive as dynamic top-level keys named "season/0", "season/1", … and are
+/// captured by JsonExtensionData so we don't need a property per season number.
+/// </summary>
+public class TmdbSeriesWithExtras : TmdbSeriesDetails
+{
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extras { get; set; }
 }
 
 public class TmdbEpisode
@@ -60,10 +73,11 @@ public class TmdbCollectionRef
 
 public class TmdbCollectionDetails
 {
-    [JsonPropertyName("id")]       public int    Id       { get; set; }
-    [JsonPropertyName("name")]     public string Name     { get; set; } = string.Empty;
-    [JsonPropertyName("overview")] public string? Overview { get; set; }
-    [JsonPropertyName("parts")]    public List<TmdbMoviePart> Parts { get; set; } = new();
+    [JsonPropertyName("id")]          public int    Id          { get; set; }
+    [JsonPropertyName("name")]        public string Name        { get; set; } = string.Empty;
+    [JsonPropertyName("overview")]    public string? Overview    { get; set; }
+    [JsonPropertyName("poster_path")] public string? PosterPath  { get; set; }
+    [JsonPropertyName("parts")]       public List<TmdbMoviePart> Parts { get; set; } = new();
 }
 
 public class TmdbMoviePart
