@@ -14,4 +14,11 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.MissingMediaChecker.dll"
 changelog: |-
-  Initial release
+  - New since last scan: highlights newly missing items since previous run
+  - Season badges on collapsed series headers (fully missing = red, partial = amber)
+  - Poster thumbnails from TMDB shown in group headers
+  - Ignore list: suppress episodes, seasons, series, movies, or collections from the UI
+  - Incremental/smart scan: skips ended series with unchanged episode counts to reduce TMDB API usage
+  - Recently-aired-only mode: filter results to a configurable day window
+  - Paginated streaming API: /Results/Summary and /Results/Groups endpoints
+  - Plugin notifications: posts a Jellyfin activity-log entry when new missing media is found
