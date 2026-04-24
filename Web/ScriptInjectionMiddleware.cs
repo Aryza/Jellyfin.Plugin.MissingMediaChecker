@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -121,16 +122,25 @@ public sealed class ScriptInjectionMiddleware : IMiddleware
             context.Response.Body = original;
             buffer.Position = 0;
 
-            // Only rewrite text/html bodies; leave binary responses alone.
-            var ct = context.Response.ContentType ?? string.Empty;
+            var ct       = context.Response.ContentType ?? string.Empty;
+            var encoding = context.Response.Headers["Content-Encoding"].ToString();
+
             if (!ct.Contains("text/html", StringComparison.OrdinalIgnoreCase))
             {
                 await buffer.CopyToAsync(original, context.RequestAborted).ConfigureAwait(false);
                 return;
             }
 
-            using var reader = new StreamReader(buffer, leaveOpen: false);
-            var html = await reader.ReadToEndAsync(context.RequestAborted).ConfigureAwait(false);
+            // Decompress if FileTransformation (or Kestrel) compressed the body.
+            Stream readStream = encoding.Contains("gzip",    StringComparison.OrdinalIgnoreCase) ? new GZipStream(buffer, CompressionMode.Decompress, leaveOpen: true)
+                              : encoding.Contains("deflate", StringComparison.OrdinalIgnoreCase) ? new DeflateStream(buffer, CompressionMode.Decompress, leaveOpen: true)
+                              : encoding.Contains("br",      StringComparison.OrdinalIgnoreCase) ? new BrotliStream(buffer, CompressionMode.Decompress, leaveOpen: true)
+                              : buffer;
+
+            string html;
+            using (readStream)
+            using (var reader = new StreamReader(readStream, leaveOpen: false))
+                html = await reader.ReadToEndAsync(context.RequestAborted).ConfigureAwait(false);
 
             if (!html.Contains(Marker, StringComparison.Ordinal) &&
                 html.Contains("</head>", StringComparison.OrdinalIgnoreCase))
@@ -138,6 +148,8 @@ public sealed class ScriptInjectionMiddleware : IMiddleware
                 html = html.Replace("</head>", ScriptTag + "\n</head>", StringComparison.OrdinalIgnoreCase);
             }
 
+            // Strip compression header — we send plain UTF-8 now.
+            context.Response.Headers.Remove("Content-Encoding");
             context.Response.Headers["Cache-Control"] = "no-store";
             context.Response.ContentLength = null;
             await context.Response.WriteAsync(html, context.RequestAborted).ConfigureAwait(false);
