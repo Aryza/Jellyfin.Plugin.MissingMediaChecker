@@ -129,6 +129,10 @@ public sealed class TmdbService : IDisposable
     public Task<TmdbFindResult?> FindByExternalIdAsync(string externalId, string source, CancellationToken ct)
         => GetAsync<TmdbFindResult>($"/find/{Uri.EscapeDataString(externalId)}?external_source={source}", ct);
 
+    /// <summary>Fetch TMDB weekly trending movies. Used by TrendingInLibraryChannel.</summary>
+    public Task<TmdbTrendingMoviesResponse?> GetTrendingMoviesAsync(CancellationToken ct)
+        => GetAsync<TmdbTrendingMoviesResponse>("/trending/movie/week", ct);
+
     /// <summary>
     /// Fetches a series plus the full episode list for every season in a single
     /// call (when possible) using TMDB's append_to_response parameter.

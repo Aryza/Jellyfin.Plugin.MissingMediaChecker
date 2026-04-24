@@ -15,6 +15,13 @@ public class TmdbSeriesDetails
     [JsonPropertyName("number_of_seasons")]  public int  NumberOfSeasons  { get; set; }
     [JsonPropertyName("number_of_episodes")] public int  NumberOfEpisodes { get; set; }
     [JsonPropertyName("seasons")]          public List<TmdbSeasonSummary> Seasons { get; set; } = new();
+
+    /// <summary>
+    /// TMDB exposes the next upcoming episode as a pre-computed field on the
+    /// series endpoint. UpcomingEpisodesChannel uses this to avoid a per-season
+    /// fanout when filling its tiles.
+    /// </summary>
+    [JsonPropertyName("next_episode_to_air")] public TmdbEpisode? NextEpisodeToAir { get; set; }
 }
 
 public class TmdbSeasonSummary
@@ -101,4 +108,23 @@ public class TmdbFindResult
 public class TmdbFindEntry
 {
     [JsonPropertyName("id")] public int Id { get; set; }
+}
+
+// ── /trending/movie/week ──────────────────────────────────────────────────────
+
+public class TmdbTrendingMoviesResponse
+{
+    [JsonPropertyName("results")] public List<TmdbTrendingMovie> Results { get; set; } = new();
+}
+
+public class TmdbTrendingMovie
+{
+    [JsonPropertyName("id")]           public int     Id           { get; set; }
+    [JsonPropertyName("title")]        public string  Title        { get; set; } = string.Empty;
+    [JsonPropertyName("release_date")] public string? ReleaseDate  { get; set; }
+    [JsonPropertyName("overview")]     public string? Overview     { get; set; }
+    [JsonPropertyName("poster_path")]  public string? PosterPath   { get; set; }
+    [JsonPropertyName("backdrop_path")] public string? BackdropPath { get; set; }
+    [JsonPropertyName("vote_average")] public double  VoteAverage  { get; set; }
+    [JsonPropertyName("popularity")]   public double  Popularity   { get; set; }
 }

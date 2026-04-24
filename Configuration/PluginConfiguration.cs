@@ -55,4 +55,42 @@ public class PluginConfiguration : BasePluginConfiguration
     /// least one new missing episode or movie.
     /// </summary>
     public bool EnableNotifications { get; set; } = true;
+
+    // ── v1.2: Channels ─────────────────────────────────────────────────────────
+    // Four Jellyfin channels surfaced alongside Movies/Shows. Each can be added
+    // as a home-screen row via Jellyfin's native home-section customization.
+
+    /// <summary>TMDB trending movies that exist in your library.</summary>
+    public bool EnableTrendingChannel { get; set; } = true;
+    public string TrendingChannelName { get; set; } = "Trending (in library)";
+
+    /// <summary>Recently released movies present in your library (by TMDB release date).</summary>
+    public bool EnableRecentMoviesChannel { get; set; } = true;
+    public string RecentMoviesChannelName { get; set; } = "Recently released";
+    public int RecentMoviesWindowDays { get; set; } = 30;
+
+    /// <summary>Recently aired episodes present in your library.</summary>
+    public bool EnableRecentEpisodesChannel { get; set; } = true;
+    public string RecentEpisodesChannelName { get; set; } = "Recently aired";
+    public int RecentEpisodesWindowDays { get; set; } = 30;
+
+    /// <summary>Upcoming (future) episodes of series already in your library.</summary>
+    public bool EnableUpcomingEpisodesChannel { get; set; } = true;
+    public string UpcomingEpisodesChannelName { get; set; } = "Upcoming episodes";
+    public int UpcomingEpisodesWindowDays { get; set; } = 60;
+
+    /// <summary>Max items returned per channel (cap; TMDB trending is naturally ~20).</summary>
+    public int ChannelMaxItems { get; set; } = 50;
+
+    /// <summary>Per-channel TMDB result cache TTL (minutes). Prevents hammering TMDB on every browse.</summary>
+    public int ChannelCacheMinutes { get; set; } = 30;
+
+    // ── v1.2: Home-screen pill ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Inject a small pill into Jellyfin Web's top bar linking to the plugin's
+    /// report when there are unacknowledged new missing items. Uses
+    /// ScriptInjectionMiddleware to patch index.html at request time.
+    /// </summary>
+    public bool EnableHomePill { get; set; } = true;
 }

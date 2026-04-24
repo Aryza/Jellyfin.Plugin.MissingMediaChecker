@@ -1,7 +1,7 @@
 ---
 name: "Missing Media Checker"
 guid: "9b8e1c4a-2d3f-4e5b-a6c7-d8e9f0a1b2c3"
-version: "1.1.1.0"
+version: "1.2.0.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -14,5 +14,7 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.MissingMediaChecker.dll"
 changelog: |-
-  - Ignore list now shows human-readable names (e.g. "The Matrix") instead of raw TMDB IDs
-  - Poster thumbnails zoom on hover (4x scale) without shifting page layout
+  - New: four optional channels (Trending in library, Recently released movies,
+    Recently aired episodes, Upcoming episodes from owned series)
+  - New: home-screen pill for admins indicating unacknowledged missing items
+  - Added per-channel toggles, names, windows, max-item cap and cache TTL to settings
