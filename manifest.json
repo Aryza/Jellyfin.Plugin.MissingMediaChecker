@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "2.0.0.0",
+        "changelog": "## Breaking\n\nCustom Channels are removed. Home-screen rows now register with\n[IAmParadox27's Home Screen Sections plugin](https://github.com/IAmParadox27/jellyfin-plugin-home-sections) \u2014\ninstall that first or the section toggles no-op.\n\n## What changed\n\n- Three sections: **Trending (in library)**, **Recently released**, **Recently aired**\n- Rows render as card rows identical to *Next Up*, directly on the home page \u2014 no more Channels-hub detour\n- **Upcoming episodes** section dropped \u2014 native Jellyfin TV > Upcoming tab covers it\n- Home-screen pill unchanged\n- Saved v1.2 channel toggles/names/windows/caps roll forward without migration\n\n## Upgrade\n\n1. Install [Home Screen Sections](https://github.com/IAmParadox27/jellyfin-plugin-home-sections) from its catalog\n2. Install this DLL into your plugin directory\n3. Restart Jellyfin\n4. In each user's home customization, toggle the new sections on",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v2.0.0.0/missing-media-checker_2.0.0.0.zip",
+        "checksum": "3fa4d48c2ceb8d0ff78ed03b0316819b",
+        "timestamp": "2026-04-24T22:18:18Z"
+      },
+      {
         "version": "1.2.0.0",
         "changelog": "## What's new\n\n### Four optional channels\nSurfaced under **Channels** in Jellyfin and addable as home-screen rows via Jellyfin's native home customization.\n\n- **Trending in library** \u2014 TMDB weekly trending movies you already own\n- **Recently released movies** \u2014 library movies released within window (default 30 days)\n- **Recently aired episodes** \u2014 library episodes aired within window (default 30 days)\n- **Upcoming episodes** \u2014 non-playable stubs of upcoming eps for series you own (TMDB `next_episode_to_air`, default 60-day horizon)\n\nPer-channel toggles, names, windows, max-item cap and cache TTL configurable in plugin settings.\n\n### Home-screen pill\nSmall badge in Jellyfin Web's top-right corner showing the count of unacknowledged new missing items. Click \u2192 jumps to the report. Injected via `ScriptInjectionMiddleware`; opt-out via the new **Home-screen pill** setting.\n\n### Internals\n- `IPluginServiceRegistrator` to wire channels + middleware\n- `ChannelContentCache`: TTL cache with thundering-herd guard for TMDB results\n- `LibraryBridge`: shared library-query helpers\n- `IRequiresMediaInfoCallback` resolves channel items back to real library `MediaSources` for native playback",
         "targetAbi": "10.11.0.0",
