@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "2.0.0.1",
+        "changelog": "## Hotfix\n\n**Bug:** Jellyfin web page showed blank / Safari \\\"cannot decode raw data\\\" error when the File Transformation plugin is installed alongside this plugin.\n\n**Root cause:** `ScriptInjectionMiddleware` (home-screen pill) was reading FileTransformation's gzip-compressed `index.html` response as raw UTF-8 bytes, producing garbage, then forwarding it with `Content-Encoding: gzip` still set \u2014 causing browsers to reject the body.\n\n**Fix:** Middleware now detects `Content-Encoding` (gzip/deflate/br), decompresses before injecting the pill script tag, strips the encoding header, and sends plain UTF-8.\n\nUpgrade: drop `Jellyfin.Plugin.MissingMediaChecker.dll` from the zip into your plugin directory and restart Jellyfin.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v2.0.0.1/missing-media-checker_2.0.0.1.zip",
+        "checksum": "2e53c901b4f0579ea0c99128473a0566",
+        "timestamp": "2026-04-24T22:38:55Z"
+      },
+      {
         "version": "2.0.0.0",
         "changelog": "## Breaking\n\nCustom Channels are removed. Home-screen rows now register with\n[IAmParadox27's Home Screen Sections plugin](https://github.com/IAmParadox27/jellyfin-plugin-home-sections) \u2014\ninstall that first or the section toggles no-op.\n\n## What changed\n\n- Three sections: **Trending (in library)**, **Recently released**, **Recently aired**\n- Rows render as card rows identical to *Next Up*, directly on the home page \u2014 no more Channels-hub detour\n- **Upcoming episodes** section dropped \u2014 native Jellyfin TV > Upcoming tab covers it\n- Home-screen pill unchanged\n- Saved v1.2 channel toggles/names/windows/caps roll forward without migration\n\n## Upgrade\n\n1. Install [Home Screen Sections](https://github.com/IAmParadox27/jellyfin-plugin-home-sections) from its catalog\n2. Install this DLL into your plugin directory\n3. Restart Jellyfin\n4. In each user's home customization, toggle the new sections on",
         "targetAbi": "10.11.0.0",
