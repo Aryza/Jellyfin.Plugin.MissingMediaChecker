@@ -1,20 +1,19 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Jellyfin.Plugin.MissingMediaChecker.Services;
 
 /// <summary>
-/// Tiny per-key TTL cache used by the channel implementations. Jellyfin calls
-/// IChannel.GetChannelItems on every folder browse; without this, TMDB gets
-/// hammered. Keys are channel-specific strings (e.g. "trending", "upcoming").
+/// Per-key TTL cache used by the home-screen section handlers. The Home Screen
+/// Sections plugin invokes our result method on every home render for every
+/// user — without this, TMDB + ILibraryManager would get hammered.
 ///
 /// Thread-safe: concurrent misses on the same key serialise through a
 /// SemaphoreSlim so only one loader fires.
 /// </summary>
-public static class ChannelContentCache
+public static class SectionContentCache
 {
     private sealed class Entry
     {
@@ -25,6 +24,27 @@ public static class ChannelContentCache
 
     private static readonly ConcurrentDictionary<string, Entry> _entries = new();
 
+    /// <summary>Synchronous variant used by IHomeScreenSection handlers (HSS invokes via reflection and expects a sync return).</summary>
+    public static T? GetOrLoad<T>(string key, TimeSpan ttl, Func<T?> loader) where T : class
+    {
+        var entry = _entries.GetOrAdd(key, _ => new Entry());
+        if (entry.Value is T cached && entry.ExpiresAt > DateTimeOffset.UtcNow) return cached;
+
+        entry.Gate.Wait();
+        try
+        {
+            if (entry.Value is T fresh && entry.ExpiresAt > DateTimeOffset.UtcNow) return fresh;
+            var value = loader();
+            if (value is not null)
+            {
+                entry.Value     = value;
+                entry.ExpiresAt = DateTimeOffset.UtcNow.Add(ttl);
+            }
+            return value;
+        }
+        finally { entry.Gate.Release(); }
+    }
+
     public static async Task<T?> GetOrLoadAsync<T>(
         string key,
         TimeSpan ttl,
@@ -32,18 +52,12 @@ public static class ChannelContentCache
         CancellationToken ct) where T : class
     {
         var entry = _entries.GetOrAdd(key, _ => new Entry());
-
-        // Fast path: cached and still fresh.
-        if (entry.Value is T cached && entry.ExpiresAt > DateTimeOffset.UtcNow)
-            return cached;
+        if (entry.Value is T cached && entry.ExpiresAt > DateTimeOffset.UtcNow) return cached;
 
         await entry.Gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            // Re-check after acquiring the gate: another caller may have loaded.
-            if (entry.Value is T fresh && entry.ExpiresAt > DateTimeOffset.UtcNow)
-                return fresh;
-
+            if (entry.Value is T fresh && entry.ExpiresAt > DateTimeOffset.UtcNow) return fresh;
             var value = await loader(ct).ConfigureAwait(false);
             if (value is not null)
             {
@@ -52,10 +66,7 @@ public static class ChannelContentCache
             }
             return value;
         }
-        finally
-        {
-            entry.Gate.Release();
-        }
+        finally { entry.Gate.Release(); }
     }
 
     public static void InvalidateAll()

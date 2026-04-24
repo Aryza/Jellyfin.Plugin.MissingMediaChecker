@@ -1,7 +1,6 @@
-using Jellyfin.Plugin.MissingMediaChecker.Channels;
+using Jellyfin.Plugin.MissingMediaChecker.HomeSections;
 using Jellyfin.Plugin.MissingMediaChecker.Web;
 using MediaBrowser.Controller;
-using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Plugins;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,24 +8,29 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Jellyfin.Plugin.MissingMediaChecker;
 
 /// <summary>
-/// Plugin-level DI registration. Jellyfin discovers IChannel implementations
-/// via assembly scan, but the home-pill ASP.NET middleware has to be wired
-/// in explicitly — that's what <see cref="MmcStartupFilter"/> does.
+/// Plugin DI wiring. Two responsibilities:
 ///
-/// Channels are also registered as concrete <see cref="IChannel"/> entries to
-/// guarantee they're constructable via DI even if Jellyfin's discovery path
-/// changes between minor versions.
+///   1. Register the home-pill ASP.NET middleware + startup filter so the
+///      script tag lands in index.html.
+///   2. Register the three home-screen section result handlers (resolved via
+///      <see cref="Microsoft.Extensions.DependencyInjection.ActivatorUtilities"/>
+///      when the Home Screen Sections plugin invokes us by reflection) and the
+///      entry point that registers the sections with that plugin on startup.
+///
+/// Home Screen Sections (IAmParadox27) is an optional runtime dependency — if
+/// its assembly isn't loaded, <see cref="SectionRegistrar"/> logs and exits.
 /// </summary>
 public sealed class ServiceRegistrator : IPluginServiceRegistrator
 {
     public void RegisterServices(IServiceCollection services, IServerApplicationHost applicationHost)
     {
-        services.AddSingleton<IChannel, TrendingInLibraryChannel>();
-        services.AddSingleton<IChannel, RecentMoviesChannel>();
-        services.AddSingleton<IChannel, RecentEpisodesChannel>();
-        services.AddSingleton<IChannel, UpcomingEpisodesChannel>();
-
         services.AddTransient<ScriptInjectionMiddleware>();
         services.AddTransient<IStartupFilter, MmcStartupFilter>();
+
+        services.AddTransient<TrendingSectionHandler>();
+        services.AddTransient<RecentMoviesSectionHandler>();
+        services.AddTransient<RecentEpisodesSectionHandler>();
+
+        services.AddHostedService<SectionRegistrar>();
     }
 }

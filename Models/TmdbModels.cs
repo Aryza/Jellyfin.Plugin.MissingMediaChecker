@@ -15,13 +15,6 @@ public class TmdbSeriesDetails
     [JsonPropertyName("number_of_seasons")]  public int  NumberOfSeasons  { get; set; }
     [JsonPropertyName("number_of_episodes")] public int  NumberOfEpisodes { get; set; }
     [JsonPropertyName("seasons")]          public List<TmdbSeasonSummary> Seasons { get; set; } = new();
-
-    /// <summary>
-    /// TMDB exposes the next upcoming episode as a pre-computed field on the
-    /// series endpoint. UpcomingEpisodesChannel uses this to avoid a per-season
-    /// fanout when filling its tiles.
-    /// </summary>
-    [JsonPropertyName("next_episode_to_air")] public TmdbEpisode? NextEpisodeToAir { get; set; }
 }
 
 public class TmdbSeasonSummary

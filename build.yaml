@@ -1,7 +1,7 @@
 ---
 name: "Missing Media Checker"
 guid: "9b8e1c4a-2d3f-4e5b-a6c7-d8e9f0a1b2c3"
-version: "1.2.0.0"
+version: "2.0.0.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -14,7 +14,9 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.MissingMediaChecker.dll"
 changelog: |-
-  - New: four optional channels (Trending in library, Recently released movies,
-    Recently aired episodes, Upcoming episodes from owned series)
-  - New: home-screen pill for admins indicating unacknowledged missing items
-  - Added per-channel toggles, names, windows, max-item cap and cache TTL to settings
+  - Breaking: channels removed. Home-screen rows now register with IAmParadox27's
+    Home Screen Sections plugin (install required to see them)
+  - Three sections: Trending in library, Recently released movies, Recently aired episodes
+  - Dropped Upcoming-episodes section (native Jellyfin TV > Upcoming tab replaces it)
+  - Saved v1.2 channel toggles/names/windows/caps roll forward without migration
+  - Home-screen pill unchanged

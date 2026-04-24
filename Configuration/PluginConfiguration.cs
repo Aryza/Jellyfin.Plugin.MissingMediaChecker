@@ -56,15 +56,18 @@ public class PluginConfiguration : BasePluginConfiguration
     /// </summary>
     public bool EnableNotifications { get; set; } = true;
 
-    // ── v1.2: Channels ─────────────────────────────────────────────────────────
-    // Four Jellyfin channels surfaced alongside Movies/Shows. Each can be added
-    // as a home-screen row via Jellyfin's native home-section customization.
+    // ── v2.0: Home Screen Sections ────────────────────────────────────────────
+    // Three sections registered with IAmParadox27's "Home Screen Sections"
+    // plugin. If that plugin is not installed, registration silently no-ops
+    // and the scanner/pill continue to work standalone.
+    // Property names keep the legacy "Channel" prefix so saved configs from
+    // v1.2 roll forward without a migration.
 
     /// <summary>TMDB trending movies that exist in your library.</summary>
     public bool EnableTrendingChannel { get; set; } = true;
     public string TrendingChannelName { get; set; } = "Trending (in library)";
 
-    /// <summary>Recently released movies present in your library (by TMDB release date).</summary>
+    /// <summary>Recently released movies present in your library.</summary>
     public bool EnableRecentMoviesChannel { get; set; } = true;
     public string RecentMoviesChannelName { get; set; } = "Recently released";
     public int RecentMoviesWindowDays { get; set; } = 30;
@@ -74,15 +77,10 @@ public class PluginConfiguration : BasePluginConfiguration
     public string RecentEpisodesChannelName { get; set; } = "Recently aired";
     public int RecentEpisodesWindowDays { get; set; } = 30;
 
-    /// <summary>Upcoming (future) episodes of series already in your library.</summary>
-    public bool EnableUpcomingEpisodesChannel { get; set; } = true;
-    public string UpcomingEpisodesChannelName { get; set; } = "Upcoming episodes";
-    public int UpcomingEpisodesWindowDays { get; set; } = 60;
-
-    /// <summary>Max items returned per channel (cap; TMDB trending is naturally ~20).</summary>
+    /// <summary>Max items returned per section.</summary>
     public int ChannelMaxItems { get; set; } = 50;
 
-    /// <summary>Per-channel TMDB result cache TTL (minutes). Prevents hammering TMDB on every browse.</summary>
+    /// <summary>Per-section result cache TTL (minutes).</summary>
     public int ChannelCacheMinutes { get; set; } = 30;
 
     // ── v1.2: Home-screen pill ────────────────────────────────────────────────

@@ -335,11 +335,13 @@
                 </div>
 
                 <div class="verticalSection">
-                    <h3 class="sectionTitle">Channels (home-screen rows)</h3>
+                    <h3 class="sectionTitle">Home-screen sections</h3>
                     <p class="fieldDescription">
-                        Each channel below appears under <em>Channels</em> in Jellyfin and can be added as a
-                        home-screen row via the user's home customization. TMDB-driven channels require a valid
-                        API key above.
+                        Each section below registers with the
+                        <a href="https://github.com/IAmParadox27/jellyfin-plugin-home-sections" target="_blank" rel="noopener">Home Screen Sections</a>
+                        plugin and renders as a card row on the home page (same style as <em>Next Up</em>).
+                        Install that plugin first — without it, these toggles no-op.
+                        TMDB-driven sections require a valid API key above.
                     </p>
 
                     <div class="checkboxContainer">
@@ -383,27 +385,12 @@
                         <input type="number" id="mmcChRecentEpsDays" class="emby-input" min="1" max="3650" value="30">
                     </div>
 
-                    <div class="checkboxContainer">
-                        <label class="emby-checkbox-label">
-                            <input type="checkbox" id="mmcChUpcoming" is="emby-checkbox">
-                            <span>Upcoming episodes — future eps of series you own (TMDB stubs, non-playable)</span>
-                        </label>
-                    </div>
                     <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="mmcChUpcomingName">Upcoming-episodes channel name</label>
-                        <input type="text" id="mmcChUpcomingName" class="emby-input" value="Upcoming episodes">
-                    </div>
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="mmcChUpcomingDays">Upcoming-episodes window (days)</label>
-                        <input type="number" id="mmcChUpcomingDays" class="emby-input" min="1" max="3650" value="60">
-                    </div>
-
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="mmcChMaxItems">Max items per channel</label>
+                        <label class="inputLabel inputLabelUnfocused" for="mmcChMaxItems">Max items per section</label>
                         <input type="number" id="mmcChMaxItems" class="emby-input" min="1" max="500" value="50">
                     </div>
                     <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="mmcChCacheMin">Channel cache TTL (minutes)</label>
+                        <label class="inputLabel inputLabelUnfocused" for="mmcChCacheMin">Section cache TTL (minutes)</label>
                         <input type="number" id="mmcChCacheMin" class="emby-input" min="1" max="1440" value="30">
                     </div>
                 </div>
@@ -691,9 +678,6 @@
             qs('#mmcChRecentEps').checked      = cfg.EnableRecentEpisodesChannel  !== false;
             qs('#mmcChRecentEpsName').value    = cfg.RecentEpisodesChannelName    || 'Recently aired';
             qs('#mmcChRecentEpsDays').value    = cfg.RecentEpisodesWindowDays     || 30;
-            qs('#mmcChUpcoming').checked       = cfg.EnableUpcomingEpisodesChannel !== false;
-            qs('#mmcChUpcomingName').value     = cfg.UpcomingEpisodesChannelName   || 'Upcoming episodes';
-            qs('#mmcChUpcomingDays').value     = cfg.UpcomingEpisodesWindowDays    || 60;
             qs('#mmcChMaxItems').value         = cfg.ChannelMaxItems              || 50;
             qs('#mmcChCacheMin').value         = cfg.ChannelCacheMinutes          || 30;
             qs('#mmcHomePill').checked         = cfg.EnableHomePill               !== false;
@@ -729,9 +713,6 @@
             cfg.EnableRecentEpisodesChannel   = qs('#mmcChRecentEps').checked;
             cfg.RecentEpisodesChannelName     = qs('#mmcChRecentEpsName').value.trim()    || 'Recently aired';
             cfg.RecentEpisodesWindowDays      = parseInt(qs('#mmcChRecentEpsDays').value, 10) || 30;
-            cfg.EnableUpcomingEpisodesChannel = qs('#mmcChUpcoming').checked;
-            cfg.UpcomingEpisodesChannelName   = qs('#mmcChUpcomingName').value.trim()     || 'Upcoming episodes';
-            cfg.UpcomingEpisodesWindowDays    = parseInt(qs('#mmcChUpcomingDays').value, 10) || 60;
             cfg.ChannelMaxItems               = parseInt(qs('#mmcChMaxItems').value, 10) || 50;
             cfg.ChannelCacheMinutes           = parseInt(qs('#mmcChCacheMin').value, 10) || 30;
             cfg.EnableHomePill                = qs('#mmcHomePill').checked;
