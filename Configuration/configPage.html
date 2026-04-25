@@ -223,44 +223,161 @@
                 .mmc-progress-bar   { height: 100%; width: 0%; background: #00a4dc; transition: width 0.5s ease; }
 
                 /* Release Calendar tab */
-                .mmc-cal-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 1em; }
-                .mmc-cal-toolbar input[type="number"] {
-                    padding: 6px 10px; border-radius: 3px; width: 80px;
-                    border: 1px solid rgba(255,255,255,0.15);
-                    background: rgba(255,255,255,0.05); color: inherit; font-size: 0.9em;
+                .cal-toolbar {
+                    display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+                    margin-bottom: 14px; padding-bottom: 14px;
+                    border-bottom: 1px solid rgba(255,255,255,0.08);
                 }
-                .mmc-cal-month {
-                    margin: 1.4em 0 0.4em; padding-bottom: 4px;
-                    font-size: 0.95em; font-weight: 500; opacity: 0.85;
+                .cal-toolbar label { font-size: 0.85em; opacity: 0.6; }
+                .cal-toolbar input[type="number"] {
+                    width: 68px; padding: 5px 8px; border-radius: 4px;
+                    border: 1px solid rgba(255,255,255,0.18);
+                    background: rgba(255,255,255,0.07); color: inherit; font-size: 0.9em;
+                }
+                .cal-btn-refresh {
+                    display: inline-flex; align-items: center; gap: 6px;
+                    padding: 6px 14px; border-radius: 4px;
+                    border: 1px solid rgba(0,164,220,0.4);
+                    background: rgba(0,164,220,0.12); color: #7dd3fc;
+                    font-size: 0.88em; cursor: pointer;
+                }
+                .cal-btn-refresh:hover:not(:disabled) { background: rgba(0,164,220,0.22); }
+                .cal-btn-refresh:disabled { opacity: 0.55; cursor: default; }
+                .cal-btn-refresh.done {
+                    border-color: rgba(34,197,94,0.4);
+                    background: rgba(34,197,94,0.12); color: #86efac;
+                }
+                .cal-spin {
+                    display: inline-block; width: 11px; height: 11px;
+                    border: 2px solid rgba(125,211,252,0.3); border-top-color: #7dd3fc;
+                    border-radius: 50%; animation: calSpin 0.7s linear infinite;
+                }
+                @keyframes calSpin { to { transform: rotate(360deg); } }
+                .cal-view-toggle {
+                    display: inline-flex; border-radius: 5px;
+                    border: 1px solid rgba(255,255,255,0.12); overflow: hidden;
+                }
+                .cal-view-btn {
+                    padding: 5px 12px; font-size: 0.82em; cursor: pointer;
+                    background: none; border: none; color: rgba(255,255,255,0.45);
+                }
+                .cal-view-btn.active { background: rgba(255,255,255,0.1); color: #e0e0e0; }
+                .cal-view-btn + .cal-view-btn { border-left: 1px solid rgba(255,255,255,0.12); }
+                .cal-toolbar-meta { margin-left: auto; font-size: 0.8em; opacity: 0.45; text-align: right; }
+                .cal-toolbar-meta strong { opacity: 0.8; color: #e0e0e0; }
+
+                .cal-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+                .cal-chip {
+                    display: inline-flex; align-items: center; gap: 5px;
+                    padding: 4px 10px; border-radius: 20px; font-size: 0.8em;
+                    border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);
+                }
+                .cal-chip .num { font-weight: 700; }
+                .cal-chip-tv    { border-color: rgba(0,164,220,0.3);  color: #7dd3fc;  background: rgba(0,164,220,0.07);  }
+                .cal-chip-movie { border-color: rgba(168,85,247,0.3); color: #d8b4fe; background: rgba(168,85,247,0.07); }
+
+                /* agenda */
+                .cal-month-hdr {
+                    display: flex; align-items: center; gap: 12px;
+                    margin: 24px 0 10px; font-size: 0.88em; font-weight: 600;
+                    letter-spacing: 0.06em; text-transform: uppercase; color: #a0a0a0;
+                }
+                .cal-month-hdr::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.08); }
+                .cal-day-marker {
+                    display: flex; align-items: center; gap: 10px;
+                    margin: 12px 0 7px; font-size: 0.78em; font-weight: 600; letter-spacing: 0.04em;
+                }
+                .cal-day-marker::before, .cal-day-marker::after { content:''; flex:1; height:1px; }
+                .cal-day-marker.yesterday { color: rgba(255,255,255,0.3); }
+                .cal-day-marker.yesterday::before,
+                .cal-day-marker.yesterday::after { background: rgba(255,255,255,0.08); }
+                .cal-day-marker.today { color: #00a4dc; }
+                .cal-day-marker.today::before,
+                .cal-day-marker.today::after { background: rgba(0,164,220,0.3); }
+
+                .cal-row {
+                    display: flex; align-items: stretch; border-radius: 6px;
+                    margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.08);
+                    background: rgba(255,255,255,0.025); overflow: hidden;
+                }
+                .cal-row:hover { background: rgba(255,255,255,0.05); }
+                .cal-row.past  { opacity: 0.5; }
+                .cal-date-col {
+                    flex: 0 0 60px; display: flex; flex-direction: column;
+                    align-items: center; justify-content: center; padding: 12px 8px;
+                    background: rgba(0,0,0,0.2); border-right: 1px solid rgba(255,255,255,0.06);
+                }
+                .cal-weekday { font-size: 0.7em; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.05em; }
+                .cal-daynum  { font-size: 1.7em; font-weight: 700; line-height: 1; color: #fff; }
+                .cal-row.is-today .cal-date-col { background: rgba(0,164,220,0.07); }
+                .cal-row.is-today .cal-daynum   { color: #00a4dc; }
+                .cal-row.is-soon  .cal-daynum   { color: #fbbf24; }
+
+                .cal-poster-wrap { flex: 0 0 52px; display: flex; align-items: stretch; }
+                .cal-poster { width: 52px; object-fit: cover; display: block; }
+                .cal-poster-ph {
+                    width: 52px; background: rgba(255,255,255,0.04);
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 0.68em; color: rgba(255,255,255,0.2);
+                    border-right: 1px solid rgba(255,255,255,0.05);
+                }
+                .cal-content { flex:1; padding: 11px 14px; display: flex; flex-direction: column; justify-content: center; min-width:0; }
+                .cal-title-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
+                .cal-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.72em; font-weight: 600; flex-shrink: 0; }
+                .cal-badge-tv    { background: rgba(0,164,220,0.18); color: #7dd3fc; }
+                .cal-badge-movie { background: rgba(168,85,247,0.18); color: #d8b4fe; }
+                .cal-title { font-weight: 600; font-size: 0.97em; color: #f0f0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .cal-title a { color: inherit; text-decoration: none; }
+                .cal-title a:hover { color: #00a4dc; }
+                .cal-sub { font-size: 0.82em; opacity: 0.55; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .cal-overview { font-size: 0.82em; opacity: 0.45; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+                .cal-actions { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 5px; padding: 10px 14px; }
+                .cal-link-tmdb, .cal-link-jf { font-size: 0.75em; padding: 2px 7px; border-radius: 3px; text-decoration: none; white-space: nowrap; }
+                .cal-link-tmdb { color: #7dd3fc; border: 1px solid rgba(125,211,252,0.25); background: rgba(125,211,252,0.06); }
+                .cal-link-tmdb:hover { background: rgba(125,211,252,0.14); }
+                .cal-link-jf   { color: #d8b4fe; border: 1px solid rgba(216,180,254,0.25); background: rgba(216,180,254,0.06); }
+                .cal-link-jf:hover   { background: rgba(216,180,254,0.14); }
+
+                /* month grid */
+                .cal-grid-section { margin-bottom: 32px; }
+                .cal-grid-month-hdr {
+                    font-size: 0.95em; font-weight: 600; color: #c0c0c0;
+                    margin-bottom: 8px; padding-bottom: 6px;
                     border-bottom: 1px solid rgba(255,255,255,0.1);
                 }
-                .mmc-cal-row {
-                    display: flex; align-items: flex-start; gap: 14px;
-                    padding: 10px 12px;
-                    border: 1px solid rgba(255,255,255,0.08); border-radius: 4px;
-                    margin-bottom: 6px; background: rgba(255,255,255,0.02);
+                .cal-grid-dow {
+                    display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 3px;
                 }
-                .mmc-cal-row:hover { background: rgba(255,255,255,0.05); }
-                .mmc-cal-date {
-                    flex: 0 0 64px; text-align: center; padding-top: 2px;
-                    font-size: 0.78em; opacity: 0.85; line-height: 1.25;
+                .cal-grid-dow > div {
+                    text-align: center; font-size: 0.7em; font-weight: 600;
+                    letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.3; padding: 4px 0;
                 }
-                .mmc-cal-date .d { font-size: 1.6em; font-weight: bold; opacity: 1; color: #00a4dc; }
-                .mmc-cal-poster {
-                    flex: 0 0 40px; width: 40px; height: 60px; object-fit: cover;
-                    border-radius: 3px; background: rgba(255,255,255,0.05);
+                .cal-grid-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 3px; }
+                .cal-grid-cell {
+                    min-height: 76px; border-radius: 4px; padding: 5px 4px 4px;
+                    background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); overflow: hidden;
                 }
-                .mmc-cal-poster.placeholder {
-                    display: flex; align-items: center; justify-content: center;
-                    font-size: 0.65em; color: rgba(255,255,255,0.3);
-                    border: 1px dashed rgba(255,255,255,0.12);
+                .cal-grid-cell.empty { background: none; border-color: transparent; }
+                .cal-grid-cell.today { border-color: rgba(0,164,220,0.4); background: rgba(0,164,220,0.05); }
+                .cal-grid-cell.past  { opacity: 0.4; }
+                .cal-grid-daynum { font-size: 0.72em; font-weight: 700; opacity: 0.4; text-align: right; margin-bottom: 4px; line-height: 1; }
+                .cal-grid-cell.today .cal-grid-daynum { color: #00a4dc; opacity: 1; }
+                .cal-grid-item {
+                    display: flex; align-items: center; gap: 4px; border-radius: 3px;
+                    padding: 2px 3px; margin-bottom: 3px; overflow: hidden;
+                    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+                    cursor: default;
                 }
-                .mmc-cal-meta { flex: 1; min-width: 0; }
-                .mmc-cal-title { font-weight: 500; font-size: 0.95em; }
-                .mmc-cal-sub { font-size: 0.82em; opacity: 0.65; margin-top: 2px; }
-                .mmc-cal-overview { font-size: 0.82em; opacity: 0.55; margin-top: 4px; max-width: 720px; }
-                .mmc-badge-cal-tv    { background: rgba(0,164,220,0.2);  color: #7dd3fc; margin-right: 6px; }
-                .mmc-badge-cal-movie { background: rgba(168,85,247,0.2); color: #d8b4fe; margin-right: 6px; }
+                .cal-grid-item.tv-item    { border-left: 2px solid rgba(0,164,220,0.6); }
+                .cal-grid-item.movie-item { border-left: 2px solid rgba(168,85,247,0.6); }
+                .cal-grid-item-poster {
+                    width: 20px; height: 28px; object-fit: cover; border-radius: 2px;
+                    flex-shrink: 0; background: rgba(255,255,255,0.05);
+                }
+                .cal-grid-item-ph { width: 20px; height: 28px; flex-shrink: 0; background: rgba(255,255,255,0.04); border-radius: 2px; }
+                .cal-grid-item-text { min-width: 0; flex: 1; }
+                .cal-grid-item-title { font-size: 0.7em; font-weight: 500; color: #e0e0e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+                .cal-grid-item-sub   { font-size: 0.63em; opacity: 0.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
 
                 .mmc-ign-list { margin-top: 0.5em; font-size: 0.85em; }
                 .mmc-ign-item {
@@ -519,13 +636,18 @@
 
             <!-- ══ Release Calendar ════════════════════════════════════════════ -->
             <div class="mmc-panel" data-panel="calendar" style="display:none;">
-                <div class="mmc-cal-toolbar">
-                    <label for="mmcCalDays" style="font-size:0.9em;opacity:0.75;">Show next</label>
+                <div class="cal-toolbar">
+                    <label for="mmcCalDays">Show next</label>
                     <input type="number" id="mmcCalDays" min="1" max="730" value="90">
-                    <span style="font-size:0.9em;opacity:0.75;">days</span>
-                    <button id="mmcCalRefresh">Refresh from TMDB</button>
-                    <span id="mmcCalMeta" style="font-size:0.82em;opacity:0.55;margin-left:auto;"></span>
+                    <label for="mmcCalDays">days</label>
+                    <button class="cal-btn-refresh" id="mmcCalRefresh">&#8635; Refresh from TMDB</button>
+                    <div class="cal-view-toggle">
+                        <button class="cal-view-btn active" id="mmcCalViewAgenda">&#9776; Agenda</button>
+                        <button class="cal-view-btn"        id="mmcCalViewMonth">&#9783; Month</button>
+                    </div>
+                    <div class="cal-toolbar-meta" id="mmcCalMeta"></div>
                 </div>
+                <div class="cal-chips" id="mmcCalChips" style="display:none;"></div>
                 <div id="mmcCalLoad" class="mmc-load">Loading calendar…</div>
                 <div id="mmcCalErr"  class="mmc-err"  style="display:none;"></div>
                 <div id="mmcCalBody" style="display:none;"></div>
@@ -647,7 +769,9 @@
             return;
         }
         if (t.closest && t.closest('#mmcDiagBtn'))     { ev.preventDefault(); doDiag(); return; }
-        if (t.closest && t.closest('#mmcCalRefresh')) { ev.preventDefault(); loadCalendar(true);  return; }
+        if (t.closest && t.closest('#mmcCalRefresh'))    { ev.preventDefault(); loadCalendar(true);           return; }
+        if (t.closest && t.closest('#mmcCalViewAgenda')) { ev.preventDefault(); switchCalView('agenda');       return; }
+        if (t.closest && t.closest('#mmcCalViewMonth'))  { ev.preventDefault(); switchCalView('month');        return; }
 
         // Ignore buttons (event-delegated on any .mmc-ign-btn inside report)
         var ignBtn = t.closest && t.closest('.mmc-ign-btn');
@@ -1332,24 +1456,46 @@
     }
 
     // ── Release Calendar ───────────────────────────────────────────────────────
-    var calLoading = false;
+    var calLoading  = false;
+    var calView     = 'agenda'; // 'agenda' | 'month'
+    var calLastData = null;
+
     function loadCalendar(force) {
         if (calLoading) return;
         calLoading = true;
 
+        var btn   = qs('#mmcCalRefresh');
         var days  = parseInt(qs('#mmcCalDays').value, 10) || 90;
         var path  = 'MissingMedia/Calendar?days=' + days + (force ? '&refresh=true' : '');
 
-        qs('#mmcCalLoad').style.display = 'block';
-        qs('#mmcCalErr').style.display  = 'none';
-        qs('#mmcCalBody').style.display = 'none';
+        btn.disabled   = true;
+        btn.innerHTML  = '<span class="cal-spin"></span> Loading…';
+        btn.classList.remove('done');
+
+        qs('#mmcCalLoad').style.display  = 'block';
+        qs('#mmcCalErr').style.display   = 'none';
+        qs('#mmcCalBody').style.display  = 'none';
+        qs('#mmcCalChips').style.display = 'none';
 
         apiGet(path).then(function (data) {
             qs('#mmcCalLoad').style.display = 'none';
-            renderCalendar(data || { items: [] });
-            qs('#mmcCalBody').style.display = 'block';
+            calLastData = data || { items: [] };
+            renderCalendar(calLastData);
+            qs('#mmcCalBody').style.display  = 'block';
+            qs('#mmcCalChips').style.display = 'flex';
+
+            btn.innerHTML = '✓ Updated';
+            btn.classList.add('done');
+            setTimeout(function () {
+                btn.innerHTML = '↻ Refresh from TMDB';
+                btn.classList.remove('done');
+                btn.disabled = false;
+            }, 2000);
         }).catch(function (err) {
             qs('#mmcCalLoad').style.display = 'none';
+            btn.innerHTML = '↻ Refresh from TMDB';
+            btn.disabled  = false;
+
             var bodyP = (err && typeof err.text === 'function')
                 ? err.text().catch(function () { return ''; })
                 : Promise.resolve(err && err.responseText ? String(err.responseText) : '');
@@ -1365,78 +1511,215 @@
         }).finally(function () { calLoading = false; });
     }
 
-    function renderCalendar(data) {
-        var body  = qs('#mmcCalBody');
-        var items = (data && data.items) || [];
-        var meta  = qs('#mmcCalMeta');
-        if (data && data.generatedAt) {
-            meta.textContent = items.length + ' upcoming · scanned ' +
-                (data.seriesScanned || 0) + ' series, ' +
-                (data.collectionsScanned || 0) + ' collections · ' +
-                'cached at ' + new Date(data.generatedAt).toLocaleString();
-        } else {
-            meta.textContent = '';
-        }
+    function switchCalView(view) {
+        calView = view;
+        qs('#mmcCalViewAgenda').classList.toggle('active', view === 'agenda');
+        qs('#mmcCalViewMonth').classList.toggle('active',  view === 'month');
+        if (calLastData) renderCalendar(calLastData);
+    }
 
+    function renderCalendar(data) {
+        var items = (data && data.items) || [];
+
+        // summary chips
+        var epCount  = items.filter(function (i) { return i.kind === 'episode'; }).length;
+        var movCount = items.filter(function (i) { return i.kind === 'movie'; }).length;
+        qs('#mmcCalChips').innerHTML =
+            (epCount  ? '<div class="cal-chip cal-chip-tv"><span class="num">' + epCount  + '</span> upcoming episodes</div>' : '') +
+            (movCount ? '<div class="cal-chip cal-chip-movie"><span class="num">' + movCount + '</span> upcoming movies</div>' : '');
+
+        // meta line
+        var meta = qs('#mmcCalMeta');
+        if (data && data.generatedAt) {
+            meta.innerHTML =
+                '<strong>' + items.length + '</strong> upcoming &nbsp;&middot;&nbsp; ' +
+                (data.seriesScanned || 0) + ' series &nbsp;&middot;&nbsp; ' +
+                (data.collectionsScanned || 0) + ' collections &nbsp;&middot;&nbsp; ' +
+                'cached ' + new Date(data.generatedAt).toLocaleTimeString();
+        } else { meta.textContent = ''; }
+
+        qs('#mmcCalBody').innerHTML = '';
         if (items.length === 0) {
-            body.innerHTML = '<div class="mmc-empty">Nothing scheduled in the selected window.</div>';
+            qs('#mmcCalBody').innerHTML = '<div class="mmc-empty">Nothing scheduled in the selected window.</div>';
             return;
         }
 
-        var MONTHS = ['January','February','March','April','May','June',
-                      'July','August','September','October','November','December'];
+        if (calView === 'month') {
+            renderMonthGrid(items);
+        } else {
+            renderAgenda(items);
+        }
+    }
+
+    function renderAgenda(items) {
+        var today     = new Date(); today.setHours(0,0,0,0);
+        var yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+        var soon      = new Date(today); soon.setDate(today.getDate() + 7);
+
+        var MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        var WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
         var html = '';
-        var currentMonthKey = '';
+        var curMonth = '';
+        var markedYesterday = false, markedToday = false;
 
         items.forEach(function (it) {
             var d = parseDate(it.date);
             if (!d) return;
+
+            var isToday     = d.getTime() === today.getTime();
+            var isYesterday = d.getTime() === yesterday.getTime();
+            var isSoon      = d > today && d <= soon;
+            var isPast      = d < today && !isToday;
+
             var monthKey = d.getFullYear() + '-' + d.getMonth();
-            if (monthKey !== currentMonthKey) {
-                html += '<div class="mmc-cal-month">' + esc(MONTHS[d.getMonth()] + ' ' + d.getFullYear()) + '</div>';
-                currentMonthKey = monthKey;
+            if (monthKey !== curMonth) {
+                html += '<div class="cal-month-hdr">' + esc(MONTHS[d.getMonth()] + ' ' + d.getFullYear()) + '</div>';
+                curMonth = monthKey;
+                markedYesterday = false;
+                markedToday = false;
             }
 
+            if (isYesterday && !markedYesterday) {
+                html += '<div class="cal-day-marker yesterday">Yesterday — ' + MONTHS[d.getMonth()].slice(0,3) + ' ' + d.getDate() + '</div>';
+                markedYesterday = true;
+            }
+            if (!isYesterday && !markedToday && (isToday || (!isPast && d >= today))) {
+                html += '<div class="cal-day-marker today">Today — ' + MONTHS[today.getMonth()].slice(0,3) + ' ' + today.getDate() + '</div>';
+                markedToday = true;
+            }
+
+            var rowCls = 'cal-row' +
+                (isToday ? ' is-today' : '') +
+                (isSoon  ? ' is-soon'  : '') +
+                (isPast  ? ' past'     : '');
+
             var poster = it.posterPath
-                ? '<img class="mmc-cal-poster" loading="lazy" alt="" src="https://image.tmdb.org/t/p/w92' + esc(it.posterPath) + '">'
-                : '<div class="mmc-cal-poster placeholder">no art</div>';
+                ? '<div class="cal-poster-wrap"><img class="cal-poster" loading="lazy" alt="" src="https://image.tmdb.org/t/p/w92' + esc(it.posterPath) + '"></div>'
+                : '<div class="cal-poster-wrap"><div class="cal-poster-ph"></div></div>';
 
-            var badge = it.kind === 'movie'
-                ? '<span class="mmc-badge mmc-badge-cal-movie">Movie</span>'
-                : '<span class="mmc-badge mmc-badge-cal-tv">TV</span>';
-
+            var badge   = '<span class="cal-badge ' + (it.kind === 'movie' ? 'cal-badge-movie' : 'cal-badge-tv') + '">' + (it.kind === 'movie' ? 'Movie' : 'TV') + '</span>';
             var tmdbUrl = it.kind === 'movie'
                 ? 'https://www.themoviedb.org/movie/' + it.tmdbItemId
-                : 'https://www.themoviedb.org/tv/' + it.tmdbParentId +
-                  '/season/' + it.seasonNumber + '/episode/' + it.episodeNumber;
-
-            var jfLink = jellyfinLink(it.jellyfinId);
-            var weekday = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+                : 'https://www.themoviedb.org/tv/' + it.tmdbParentId + '/season/' + it.seasonNumber + '/episode/' + it.episodeNumber;
+            var jfHref = it.jellyfinId ? jellyfinUrl(it.jellyfinId) : null;
+            var jfBtn  = jfHref ? '<a class="cal-link-jf" href="' + jfHref + '" target="_blank">Jellyfin &#8599;</a>' : '';
+            var colBtn = (it.kind === 'movie' && it.jellyfinId)
+                ? '<a class="cal-link-jf" href="' + (jellyfinUrl(it.jellyfinId) || '#') + '" target="_blank">Collection &#8599;</a>' : jfBtn;
 
             html +=
-                '<div class="mmc-cal-row">' +
-                    '<div class="mmc-cal-date">' +
-                        '<div class="d">' + d.getDate() + '</div>' +
-                        '<div>' + weekday + '</div>' +
+                '<div class="' + rowCls + '">' +
+                    '<div class="cal-date-col">' +
+                        '<div class="cal-weekday">' + WEEKDAYS[d.getDay()] + '</div>' +
+                        '<div class="cal-daynum">' + d.getDate() + '</div>' +
                     '</div>' +
                     poster +
-                    '<div class="mmc-cal-meta">' +
-                        '<div class="mmc-cal-title">' + badge +
-                            '<a class="mmc-tmdb-link" href="' + tmdbUrl + '" target="_blank">' +
-                            esc(it.title) + '</a>' + jfLink +
+                    '<div class="cal-content">' +
+                        '<div class="cal-title-row">' + badge +
+                            '<span class="cal-title"><a class="mmc-tmdb-link" href="' + tmdbUrl + '" target="_blank">' + esc(it.title) + '</a></span>' +
                         '</div>' +
-                        (it.subtitle ? '<div class="mmc-cal-sub">' + esc(it.subtitle) + '</div>' : '') +
-                        (it.overview ? '<div class="mmc-cal-overview">' + esc(it.overview) + '</div>' : '') +
+                        (it.subtitle ? '<div class="cal-sub">' + esc(it.subtitle) + '</div>' : '') +
+                        (it.overview ? '<div class="cal-overview">' + esc(it.overview) + '</div>' : '') +
+                    '</div>' +
+                    '<div class="cal-actions">' +
+                        '<a class="cal-link-tmdb" href="' + tmdbUrl + '" target="_blank">TMDB &#8599;</a>' +
+                        (it.kind === 'movie' ? colBtn : jfBtn) +
                     '</div>' +
                 '</div>';
         });
 
-        body.innerHTML = html;
+        qs('#mmcCalBody').innerHTML = html;
+    }
+
+    function renderMonthGrid(items) {
+        // Show 3 months starting from current month.
+        var today = new Date(); today.setHours(0,0,0,0);
+        var yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+
+        var MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        var WEEKDAYS_MON = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; // Mon-first
+
+        // Build a lookup: dateKey (yyyy-MM-dd) → array of items
+        var byDate = {};
+        items.forEach(function (it) {
+            if (!it.date) return;
+            if (!byDate[it.date]) byDate[it.date] = [];
+            byDate[it.date].push(it);
+        });
+
+        var html = '';
+        var baseYear  = today.getFullYear();
+        var baseMonth = today.getMonth();
+
+        for (var mi = 0; mi < 3; mi++) {
+            var month = (baseMonth + mi) % 12;
+            var year  = baseYear + Math.floor((baseMonth + mi) / 12);
+
+            html += '<div class="cal-grid-section"><div class="cal-grid-month-hdr">' + MONTHS[month] + ' ' + year + '</div>';
+            html += '<div class="cal-grid-dow">';
+            WEEKDAYS_MON.forEach(function (d) { html += '<div>' + d + '</div>'; });
+            html += '</div>';
+
+            var firstDay = new Date(year, month, 1);
+            var daysInMonth = new Date(year, month + 1, 0).getDate();
+            // Mon=0 offset: JS getDay() Sun=0, so Mon=1 → offset 0, Sun=7 → offset 6
+            var startOffset = (firstDay.getDay() + 6) % 7;
+
+            var cells = [];
+            for (var i = 0; i < startOffset; i++) cells.push(null);
+            for (var d2 = 1; d2 <= daysInMonth; d2++) cells.push(d2);
+            // pad to multiple of 7
+            while (cells.length % 7 !== 0) cells.push(null);
+
+            for (var w = 0; w < cells.length; w += 7) {
+                html += '<div class="cal-grid-week">';
+                for (var c = 0; c < 7; c++) {
+                    var day = cells[w + c];
+                    if (day === null) { html += '<div class="cal-grid-cell empty"></div>'; continue; }
+
+                    var cellDate = new Date(year, month, day);
+                    var isToday  = cellDate.getTime() === today.getTime();
+                    var isPast   = cellDate < today && !isToday;
+                    var isYest   = cellDate.getTime() === yesterday.getTime();
+                    var cls = 'cal-grid-cell' + (isToday ? ' today' : '') + ((isPast && !isYest) ? ' past' : '');
+
+                    var dateKey = year + '-' +
+                        String(month + 1).padStart(2, '0') + '-' +
+                        String(day).padStart(2, '0');
+                    var dayItems = byDate[dateKey] || [];
+
+                    html += '<div class="' + cls + '"><div class="cal-grid-daynum">' + day + '</div>';
+                    dayItems.forEach(function (it) {
+                        var itemCls = 'cal-grid-item ' + (it.kind === 'movie' ? 'movie-item' : 'tv-item');
+                        var img = it.posterPath
+                            ? '<img class="cal-grid-item-poster" loading="lazy" alt="" src="https://image.tmdb.org/t/p/w92' + esc(it.posterPath) + '">'
+                            : '<div class="cal-grid-item-ph"></div>';
+                        var sub = it.kind === 'episode' && it.seasonNumber !== null && it.episodeNumber !== null
+                            ? 'S' + String(it.seasonNumber).padStart(2,'0') + 'E' + String(it.episodeNumber).padStart(2,'0')
+                            : (it.subtitle ? it.subtitle.split(' ·')[0] : '');
+                        var tmdbUrl = it.kind === 'movie'
+                            ? 'https://www.themoviedb.org/movie/' + it.tmdbItemId
+                            : 'https://www.themoviedb.org/tv/' + it.tmdbParentId + '/season/' + it.seasonNumber + '/episode/' + it.episodeNumber;
+                        html += '<a class="' + itemCls + '" href="' + tmdbUrl + '" target="_blank" title="' + esc(it.title) + (sub ? ' · ' + sub : '') + '">' +
+                            img +
+                            '<div class="cal-grid-item-text">' +
+                                '<div class="cal-grid-item-title">' + esc(it.title) + '</div>' +
+                                (sub ? '<div class="cal-grid-item-sub">' + esc(sub) + '</div>' : '') +
+                            '</div>' +
+                        '</a>';
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+        }
+
+        qs('#mmcCalBody').innerHTML = html;
     }
 
     function parseDate(s) {
         if (!s) return null;
-        // ISO yyyy-MM-dd parsed as local date (avoid UTC shift).
         var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
         if (!m) return null;
         return new Date(+m[1], +m[2] - 1, +m[3]);

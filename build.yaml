@@ -1,7 +1,7 @@
 ---
 name: "Missing Media Checker"
 guid: "9b8e1c4a-2d3f-4e5b-a6c7-d8e9f0a1b2c3"
-version: "2.1.0.0"
+version: "2.1.1.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -14,10 +14,12 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.MissingMediaChecker.dll"
 changelog: |-
-  - New: Release Calendar tab — upcoming next-episode-to-air for owned series
-    plus future-release movies in box-set collections you already own at least
-    one part of. Configurable lookahead window (default 90 days) and result
-    cache TTL (default 6 h). Force-refresh button bypasses cache.
-  - Backend: GET /MissingMedia/Calendar endpoint + CalendarService.
-  - TmdbSeriesDetails now exposes next_episode_to_air / last_episode_to_air.
-  - SectionContentCache.Invalidate(key) for per-key cache busting.
+  - Calendar UX overhaul: agenda view (poster + date column + 2-line overview +
+    TMDB/Jellyfin links) and month-grid view (next 3 months, Mon–Sun, compact
+    poster + episode number per cell). Toggle between views in the toolbar.
+  - Refresh button now shows spinner while loading, flashes green "✓ Updated"
+    on success, and re-enables after 2 s — no more silent loading.
+  - Yesterday row dimmed with its own divider; Today divider in blue.
+  - Summary chips (N upcoming episodes / N upcoming movies) above the list.
+  - Month grid: today cell highlighted in blue; past cells dimmed; each item
+    is a clickable pill linking to TMDB.
