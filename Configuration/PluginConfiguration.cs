@@ -72,13 +72,4 @@ public class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Per-section result cache TTL (minutes).</summary>
     public int ChannelCacheMinutes { get; set; } = 30;
-
-    // ── v1.2: Home-screen pill ────────────────────────────────────────────────
-
-    /// <summary>
-    /// Inject a small pill into Jellyfin Web's top bar linking to the plugin's
-    /// report when there are unacknowledged new missing items. Uses
-    /// ScriptInjectionMiddleware to patch index.html at request time.
-    /// </summary>
-    public bool EnableHomePill { get; set; } = true;
 }

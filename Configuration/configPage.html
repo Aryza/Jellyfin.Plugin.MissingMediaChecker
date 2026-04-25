@@ -253,9 +253,9 @@
                     <div id="mmcApiKeyMissing" style="display:none; padding:12px 14px; margin-bottom:10px;
                                                        border-left:4px solid #e07b00; background:rgba(224,123,0,0.12);
                                                        border-radius:3px; color:#ffd28a; font-size:0.95em;">
-                        <strong>TMDB API key required.</strong> The scan, the home-screen Trending section,
-                        and the missing-items pill all need this key to function. Without it nothing in
-                        this plugin will work — paste your key below and click Save.
+                        <strong>TMDB API key required.</strong> The scan and the home-screen Trending
+                        section both need this key to function. Without it nothing in this plugin will
+                        work — paste your key below and click Save.
                     </div>
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="mmcApiKey">TMDB API Key (v3) — required</label>
@@ -370,20 +370,6 @@
                         <label class="inputLabel inputLabelUnfocused" for="mmcChCacheMin">Section cache TTL (minutes)</label>
                         <input type="number" id="mmcChCacheMin" class="emby-input" min="1" max="1440" value="30">
                     </div>
-                </div>
-
-                <div class="verticalSection">
-                    <h3 class="sectionTitle">Home-screen pill</h3>
-                    <div class="checkboxContainer">
-                        <label class="emby-checkbox-label">
-                            <input type="checkbox" id="mmcHomePill" is="emby-checkbox">
-                            <span>Show a "missing items" pill in the top-right of Jellyfin Web for admins</span>
-                        </label>
-                    </div>
-                    <p class="fieldDescription">
-                        Injects a small script into Jellyfin's index.html. Click the pill to jump to this report.
-                        Disable if you embed Jellyfin Web behind a strict CSP.
-                    </p>
                 </div>
 
                 <div class="verticalSection">
@@ -662,7 +648,6 @@
             qs('#mmcChTrendingName').value = cfg.TrendingChannelName   || 'Trending from your library';
             qs('#mmcChMaxItems').value     = cfg.ChannelMaxItems       || 50;
             qs('#mmcChCacheMin').value     = cfg.ChannelCacheMinutes   || 30;
-            qs('#mmcHomePill').checked     = cfg.EnableHomePill        !== false;
         }).catch(function (err) {
             console.error('[MissingMediaChecker] loadSettings failed', err);
         });
@@ -690,8 +675,7 @@
             cfg.EnableTrendingChannel = qs('#mmcChTrending').checked;
             cfg.TrendingChannelName   = qs('#mmcChTrendingName').value.trim() || 'Trending from your library';
             cfg.ChannelMaxItems       = parseInt(qs('#mmcChMaxItems').value, 10) || 50;
-            cfg.ChannelCacheMinutes           = parseInt(qs('#mmcChCacheMin').value, 10) || 30;
-            cfg.EnableHomePill                = qs('#mmcHomePill').checked;
+            cfg.ChannelCacheMinutes   = parseInt(qs('#mmcChCacheMin').value, 10) || 30;
 
             return ApiClient.updatePluginConfiguration(pid, cfg);
         }).then(function (result) {
