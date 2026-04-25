@@ -16,11 +16,13 @@ namespace Jellyfin.Plugin.MissingMediaChecker.Services;
 
 public class MissingMediaDetector
 {
-    // TMDB removed their published rate limit in late 2023. We still cap
-    // concurrency to keep memory bounded and be a polite citizen, and the
-    // HTTP layer retries on 429/503 with Retry-After as a safety net. No
-    // artificial per-call delay anymore.
-    private const int ConcurrentTmdbRequests = 16;
+    // TMDB removed their published rate limit in late 2023. We cap concurrency
+    // mainly to leave threadpool/SQLite headroom for the UI during a scan.
+    // 16 was too aggressive — Jellyfin web became unresponsive during scans
+    // because every parallel worker also fired DB queries.
+    private const int ConcurrentTmdbRequests = 8;
+
+    private static readonly List<Episode> EmptyEpisodes = new(0);
 
     private readonly ILibraryManager _library;
     private readonly ILogger         _logger;
@@ -161,6 +163,30 @@ public class MissingMediaDetector
 
         _logger.LogInformation("MissingMediaChecker: {N} series in library", allSeries.Count);
 
+        // Bulk-load every episode once and group by SeriesId. Replaces N
+        // per-series AncestorIds queries that previously fired in parallel —
+        // those were the dominant cause of UI starvation during a scan.
+        var allEpisodeItems = _library.GetItemList(new InternalItemsQuery
+        {
+            IncludeItemTypes = new[] { BaseItemKind.Episode },
+            Recursive        = true,
+            IsVirtualItem    = false
+        });
+
+        var episodesBySeries = new Dictionary<Guid, List<Episode>>(allSeries.Count);
+        foreach (var item in allEpisodeItems)
+        {
+            if (item is not Episode ep) continue;
+            var sid = ep.SeriesId;
+            if (sid == Guid.Empty) continue;
+            if (!episodesBySeries.TryGetValue(sid, out var list))
+                episodesBySeries[sid] = list = new List<Episode>();
+            list.Add(ep);
+        }
+        _logger.LogInformation(
+            "MissingMediaChecker: indexed {E} episodes across {S} series in one query",
+            allEpisodeItems.Count, episodesBySeries.Count);
+
         var today      = DateTime.UtcNow.Date;
         var reportsBag = new ConcurrentBag<SeriesMissingReport>();
         var skippedBag = new ConcurrentBag<SkippedSeries>();
@@ -213,14 +239,9 @@ public class MissingMediaDetector
                     return;
                 }
 
-                // ── 3. Count owned episodes (needed for fingerprint + scan) ─
-                var ownedItemsTask = Task.Run(() => _library.GetItemList(new InternalItemsQuery
-                {
-                    IncludeItemTypes = new[] { BaseItemKind.Episode },
-                    AncestorIds      = new[] { series.Id },
-                    IsVirtualItem    = false,
-                    Recursive        = true
-                }), innerCt);
+                // ── 3. Owned episodes (resolved from the bulk index above) ──
+                var ownedEpisodes = episodesBySeries.TryGetValue(series.Id, out var eps)
+                    ? eps : EmptyEpisodes;
 
                 // ── 4. Incremental cache: if fingerprint matches an "Ended"
                 // series within the min-age window, reuse the cached report
@@ -233,8 +254,7 @@ public class MissingMediaDetector
                     IsEndedStatus(cached.TmdbStatus) &&
                     (DateTime.UtcNow - cached.ScannedAtUtc) < minAge)
                 {
-                    var ownedNow = await ownedItemsTask.ConfigureAwait(false);
-                    if (ownedNow.Count == cached.OwnedEpisodeCount)
+                    if (ownedEpisodes.Count == cached.OwnedEpisodeCount)
                     {
                         // Cache hit: reuse, but clear IsNew flags (by definition
                         // nothing is new relative to the previous scan because
@@ -268,19 +288,12 @@ public class MissingMediaDetector
 
                 report((double)Interlocked.Increment(ref done_) / allSeries.Count * 100);
 
-                if (tmdbSeries is null)
-                {
-                    try { await ownedItemsTask.ConfigureAwait(false); } catch { /* swallowed */ }
-                    return;
-                }
+                if (tmdbSeries is null) return;
                 Interlocked.Increment(ref checked_);
 
-                var ownedItems = await ownedItemsTask.ConfigureAwait(false);
-
-                var owned = new HashSet<(int season, int ep)>(ownedItems.Count);
-                foreach (var item in ownedItems)
+                var owned = new HashSet<(int season, int ep)>(ownedEpisodes.Count);
+                foreach (var ep in ownedEpisodes)
                 {
-                    if (item is not Episode ep) continue;
                     if (!ep.ParentIndexNumber.HasValue || !ep.IndexNumber.HasValue) continue;
                     int sn     = ep.ParentIndexNumber.Value;
                     int eStart = ep.IndexNumber.Value;
@@ -370,7 +383,7 @@ public class MissingMediaDetector
                 incrementalCache.Entries[cacheKey] = new IncrementalCacheEntry
                 {
                     TmdbStatus        = tmdbSeries.Status,
-                    OwnedEpisodeCount = owned.Count,
+                    OwnedEpisodeCount = ownedEpisodes.Count,
                     ScannedAtUtc      = DateTime.UtcNow,
                     Report            = reportObj
                 };
@@ -490,23 +503,34 @@ public class MissingMediaDetector
                 movieIdToCollection.Count);
         }
 
-        // Phase 1 (0–70%): fetch each movie's TMDB details in parallel
-        int done1  = 0;
-        int total1 = allMovies.Count;
+        // Phase 1a (sync): movies already mapped via Jellyfin BoxSets — no TMDB call.
+        // Phase 1b (parallel HTTP): only stand-alone movies need a /movie/{id}
+        // round-trip to discover their BelongsToCollection. Pre-filtering here
+        // shrinks the parallel workload to the bare minimum.
+        var unmapped = new List<BaseItem>();
+        foreach (var movie in allMovies)
+        {
+            if (!movie.ProviderIds.TryGetValue("Tmdb", out var tmdbId) || string.IsNullOrEmpty(tmdbId))
+                continue;
+            if (!int.TryParse(tmdbId, out var tmdbIntId)) continue;
 
-        await Parallel.ForEachAsync(allMovies, parallelOpts, async (movie, innerCt) =>
+            if (movieIdToCollection.TryGetValue(movie.Id, out var knownColId))
+            {
+                collectionOwned.GetOrAdd(knownColId, static _ => new ConcurrentBag<int>()).Add(tmdbIntId);
+                continue;
+            }
+            unmapped.Add(movie);
+        }
+
+        int done1  = 0;
+        int total1 = unmapped.Count;
+
+        await Parallel.ForEachAsync(unmapped, parallelOpts, async (movie, innerCt) =>
         {
             try
             {
-                if (!movie.ProviderIds.TryGetValue("Tmdb", out var tmdbId) || string.IsNullOrEmpty(tmdbId))
-                    return;
-                if (!int.TryParse(tmdbId, out var tmdbIntId)) return;
-
-                if (movieIdToCollection.TryGetValue(movie.Id, out var knownColId))
-                {
-                    collectionOwned.GetOrAdd(knownColId, static _ => new ConcurrentBag<int>()).Add(tmdbIntId);
-                    return;
-                }
+                var tmdbId = movie.ProviderIds["Tmdb"];
+                int.TryParse(tmdbId, out var tmdbIntId);
 
                 await tmdbSem.WaitAsync(innerCt).ConfigureAwait(false);
                 try
@@ -522,7 +546,7 @@ public class MissingMediaDetector
             finally
             {
                 int d = Interlocked.Increment(ref done1);
-                report((double)d / Math.Max(total1, 1) * 70);
+                report(total1 == 0 ? 70 : (double)d / total1 * 70);
             }
         }).ConfigureAwait(false);
 

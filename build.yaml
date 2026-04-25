@@ -1,7 +1,7 @@
 ---
 name: "Missing Media Checker"
 guid: "9b8e1c4a-2d3f-4e5b-a6c7-d8e9f0a1b2c3"
-version: "2.0.1.0"
+version: "2.0.2.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -14,6 +14,11 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.MissingMediaChecker.dll"
 changelog: |-
+  - Perf: Jellyfin web UI no longer freezes during a scan
+    - Bulk-load all episodes in one SQLite query instead of N parallel AncestorIds queries
+    - Lower TMDB/parallel concurrency from 16 → 8 to leave threadpool headroom for the UI
+    - Pre-filter movie scan to skip already-mapped BoxSet movies before the parallel HTTP phase
+    - Remove redundant Task.Run wrappers around sync DB calls
   - Removed "Recently released" and "Recently aired" home sections
   - Renamed "Trending (in library)" → "Trending from your library"
   - Fix: page blank/Safari decode error when FileTransformation plugin present —
