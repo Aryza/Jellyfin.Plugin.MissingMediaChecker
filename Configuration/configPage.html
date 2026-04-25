@@ -250,12 +250,19 @@
 
                 <div class="verticalSection">
                     <h3 class="sectionTitle">TMDB API</h3>
+                    <div id="mmcApiKeyMissing" style="display:none; padding:12px 14px; margin-bottom:10px;
+                                                       border-left:4px solid #e07b00; background:rgba(224,123,0,0.12);
+                                                       border-radius:3px; color:#ffd28a; font-size:0.95em;">
+                        <strong>TMDB API key required.</strong> The scan, the home-screen Trending section,
+                        and the missing-items pill all need this key to function. Without it nothing in
+                        this plugin will work — paste your key below and click Save.
+                    </div>
                     <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="mmcApiKey">TMDB API Key (v3)</label>
+                        <label class="inputLabel inputLabelUnfocused" for="mmcApiKey">TMDB API Key (v3) — required</label>
                         <input type="text" id="mmcApiKey" class="emby-input" autocomplete="off"
                                placeholder="Paste your TMDB API key here…">
                         <div class="fieldDescription">
-                            Get a free key at
+                            Required by every feature of this plugin. Get a free key at
                             <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color:#00a4dc">
                                 themoviedb.org/settings/api</a>
                         </div>
@@ -541,6 +548,13 @@
 
     function qs(sel) { return pageEl.querySelector(sel); }
 
+    function updateApiKeyBanner() {
+        var input  = qs('#mmcApiKey');
+        var banner = qs('#mmcApiKeyMissing');
+        if (!input || !banner) return;
+        banner.style.display = input.value.trim() ? 'none' : '';
+    }
+
     // ── Tab switching ──────────────────────────────────────────────────────────
     function showTab(name) {
         pageEl.querySelectorAll('.mmc-tab').forEach(function (t) {
@@ -608,6 +622,9 @@
                 render();
             }, 250);
         }
+        if (ev.target && ev.target.id === 'mmcApiKey') {
+            updateApiKeyBanner();
+        }
     });
     pageEl.addEventListener('change', function (ev) {
         if (!ev.target) return;
@@ -628,6 +645,7 @@
             return ApiClient.getPluginConfiguration(id);
         }).then(function (cfg) {
             qs('#mmcApiKey').value        = cfg.TmdbApiKey           || '';
+            updateApiKeyBanner();
             qs('#mmcCheckTv').checked     = cfg.CheckTvSeries        !== false;
             qs('#mmcCheckCol').checked    = cfg.CheckMovieCollections !== false;
             qs('#mmcSpecials').checked    = !!cfg.IncludeSpecials;
@@ -689,6 +707,11 @@
 
     // ── Scan & polling ─────────────────────────────────────────────────────────
     function doScan() {
+        if (!(qs('#mmcApiKey').value || '').trim()) {
+            updateApiKeyBanner();
+            Dashboard.alert('TMDB API key is required. Paste your key above and click Save before running a scan.');
+            return;
+        }
         qs('#mmcScanBtn').disabled        = true;
         qs('#mmcDone').style.display      = 'none';
         qs('#mmcProgress').style.display  = 'block';
@@ -700,13 +723,29 @@
         }).catch(function (err) {
             qs('#mmcScanBtn').disabled       = false;
             qs('#mmcProgress').style.display = 'none';
-            var detail = [];
-            if (err && err.status)       detail.push('HTTP ' + err.status);
-            if (err && err.statusText)   detail.push(err.statusText);
-            if (err && err.responseText) detail.push(String(err.responseText).slice(0, 300));
-            if (err && err.message && detail.length === 0) detail.push(err.message);
             console.error('[MissingMediaChecker] scan POST failed', err);
-            Dashboard.alert('Failed to start scan: ' + (detail.join(' — ') || 'unknown error (see browser console)'));
+
+            // err can be a Fetch Response (body via async .text()) or a jqXHR
+            // (responseText is sync). Normalise so the alert always shows the
+            // server's actual message — e.g. "TMDB API key is not configured".
+            var bodyP = (err && typeof err.text === 'function')
+                ? err.text().catch(function () { return ''; })
+                : Promise.resolve(err && err.responseText ? String(err.responseText) : '');
+
+            bodyP.then(function (body) {
+                var msg = '';
+                try {
+                    var j = body ? JSON.parse(body) : null;
+                    msg = (j && j.message) ? j.message : '';
+                } catch (e) { msg = body || ''; }
+
+                var head = '';
+                if (err && err.status) head = 'HTTP ' + err.status + (err.statusText ? ' ' + err.statusText : '');
+
+                Dashboard.alert('Failed to start scan'
+                    + (head ? ' (' + head + ')' : '')
+                    + (msg  ? ': '  + msg.slice(0, 300) : ''));
+            });
         });
     }
 
