@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "2.1.2.0",
+        "changelog": "Fix month-grid calendar links: items were rendering with browser-default blue underline. Now inherit dark-theme text color with no underline; hover brightens the cell background instead.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v2.1.2.0/missing-media-checker_2.1.2.0.zip",
+        "checksum": "5dfb52b9f793579ab53a38128e6807d5",
+        "timestamp": "2026-04-25T22:10:00Z"
+      },
+      {
         "version": "2.1.1.0",
         "changelog": "## Calendar tab redesign\n\n### Two views \u2014 toggle in the toolbar\n\n**Agenda view** (default)\n- Date column: weekday + large day number (blue = today, amber = within 7 days)\n- Full-height poster\n- 2-line clamped overview\n- TMDB + Jellyfin links right-aligned\n\n**Month grid view**\n- Next 3 months, Mon\u2013Sun columns\n- Compact poster + episode number per cell\n- Each item is a clickable pill linking to TMDB\n- Today cell highlighted blue; past cells dimmed\n\n### Other improvements\n- **Refresh button feedback** \u2014 spinner while loading \u2192 green \"\u2713 Updated\" (2 s) \u2192 restores\n- **Yesterday** dimmed row + its own divider; **Today** divider in blue\n- **Summary chips** (N episodes / N movies) above the list\n\n## Upgrade\n\nDrop `Jellyfin.Plugin.MissingMediaChecker.dll` from the zip into your plugin directory and restart Jellyfin.",
         "targetAbi": "10.11.0.0",
