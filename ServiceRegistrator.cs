@@ -28,8 +28,6 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
         services.AddTransient<IStartupFilter, MmcStartupFilter>();
 
         services.AddTransient<TrendingSectionHandler>();
-        services.AddTransient<RecentMoviesSectionHandler>();
-        services.AddTransient<RecentEpisodesSectionHandler>();
 
         services.AddHostedService<SectionRegistrar>();
     }

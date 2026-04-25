@@ -57,25 +57,15 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool EnableNotifications { get; set; } = true;
 
     // ── v2.0: Home Screen Sections ────────────────────────────────────────────
-    // Three sections registered with IAmParadox27's "Home Screen Sections"
-    // plugin. If that plugin is not installed, registration silently no-ops
-    // and the scanner/pill continue to work standalone.
+    // One section registered with IAmParadox27's "Home Screen Sections" plugin.
+    // If that plugin is not installed, registration silently no-ops and the
+    // scanner/pill continue to work standalone.
     // Property names keep the legacy "Channel" prefix so saved configs from
     // v1.2 roll forward without a migration.
 
     /// <summary>TMDB trending movies that exist in your library.</summary>
     public bool EnableTrendingChannel { get; set; } = true;
-    public string TrendingChannelName { get; set; } = "Trending (in library)";
-
-    /// <summary>Recently released movies present in your library.</summary>
-    public bool EnableRecentMoviesChannel { get; set; } = true;
-    public string RecentMoviesChannelName { get; set; } = "Recently released";
-    public int RecentMoviesWindowDays { get; set; } = 30;
-
-    /// <summary>Recently aired episodes present in your library.</summary>
-    public bool EnableRecentEpisodesChannel { get; set; } = true;
-    public string RecentEpisodesChannelName { get; set; } = "Recently aired";
-    public int RecentEpisodesWindowDays { get; set; } = 30;
+    public string TrendingChannelName { get; set; } = "Trending from your library";
 
     /// <summary>Max items returned per section.</summary>
     public int ChannelMaxItems { get; set; } = 50;

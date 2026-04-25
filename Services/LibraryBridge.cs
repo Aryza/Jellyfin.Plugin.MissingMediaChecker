@@ -11,8 +11,8 @@ using MediaBrowser.Model.Entities;
 namespace Jellyfin.Plugin.MissingMediaChecker.Services;
 
 /// <summary>
-/// Shared helpers for the channel classes. Centralises queries into
-/// ILibraryManager so each channel doesn't re-invent BaseItem lookups.
+/// Shared helpers for home-section and scanner classes. Centralises queries
+/// into ILibraryManager so handlers don't re-invent BaseItem lookups.
 /// </summary>
 public static class LibraryBridge
 {
@@ -40,41 +40,7 @@ public static class LibraryBridge
         return map;
     }
 
-    /// <summary>All library movies whose PremiereDate falls within the last <paramref name="days"/>.</summary>
-    /// <remarks>Filter + sort done in-memory to stay independent of the SortOrder enum's
-    /// namespace shuffles between Jellyfin minor releases.</remarks>
-    public static IEnumerable<Movie> RecentMovies(ILibraryManager library, int days, int maxItems)
-    {
-        var cutoff = DateTime.UtcNow.AddDays(-Math.Max(1, days));
-        return library.GetItemList(new InternalItemsQuery
-        {
-            IncludeItemTypes = new[] { BaseItemKind.Movie },
-            Recursive        = true,
-            IsVirtualItem    = false
-        })
-        .OfType<Movie>()
-        .Where(m => m.PremiereDate.HasValue && m.PremiereDate.Value >= cutoff)
-        .OrderByDescending(m => m.PremiereDate)
-        .Take(Math.Max(1, maxItems));
-    }
-
-    /// <summary>All library episodes whose PremiereDate (air date) falls within the last <paramref name="days"/>.</summary>
-    public static IEnumerable<Episode> RecentEpisodes(ILibraryManager library, int days, int maxItems)
-    {
-        var cutoff = DateTime.UtcNow.AddDays(-Math.Max(1, days));
-        return library.GetItemList(new InternalItemsQuery
-        {
-            IncludeItemTypes = new[] { BaseItemKind.Episode },
-            Recursive        = true,
-            IsVirtualItem    = false
-        })
-        .OfType<Episode>()
-        .Where(e => e.PremiereDate.HasValue && e.PremiereDate.Value >= cutoff)
-        .OrderByDescending(e => e.PremiereDate)
-        .Take(Math.Max(1, maxItems));
-    }
-
-    /// <summary>All library series with a TMDB ID resolved. Used by the upcoming-episodes channel.</summary>
+    /// <summary>All library series with a TMDB ID resolved.</summary>
     public static IEnumerable<(Series Series, int TmdbId)> SeriesWithTmdb(ILibraryManager library)
     {
         var items = library.GetItemList(new InternalItemsQuery

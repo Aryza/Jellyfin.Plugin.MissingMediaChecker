@@ -1,7 +1,7 @@
 ---
 name: "Missing Media Checker"
 guid: "9b8e1c4a-2d3f-4e5b-a6c7-d8e9f0a1b2c3"
-version: "2.0.0.1"
+version: "2.0.1.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -14,11 +14,7 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.MissingMediaChecker.dll"
 changelog: |-
+  - Removed "Recently released" and "Recently aired" home sections
+  - Renamed "Trending (in library)" → "Trending from your library"
   - Fix: page blank/Safari decode error when FileTransformation plugin present —
     ScriptInjectionMiddleware now decompresses gzip/deflate/br before injecting pill
-  - Breaking: channels removed. Home-screen rows now register with IAmParadox27's
-    Home Screen Sections plugin (install required to see them)
-  - Three sections: Trending in library, Recently released movies, Recently aired episodes
-  - Dropped Upcoming-episodes section (native Jellyfin TV > Upcoming tab replaces it)
-  - Saved v1.2 channel toggles/names/windows/caps roll forward without migration
-  - Home-screen pill unchanged

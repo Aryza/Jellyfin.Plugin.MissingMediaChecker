@@ -11,7 +11,7 @@ using Newtonsoft.Json.Linq;
 namespace Jellyfin.Plugin.MissingMediaChecker.HomeSections;
 
 /// <summary>
-/// Registers our three home-screen section handlers with IAmParadox27's
+/// Registers the Trending home-screen section handler with IAmParadox27's
 /// Home Screen Sections (HSS) plugin on server startup.
 ///
 /// HSS can't be referenced at compile time because Jellyfin loads plugins into
@@ -72,11 +72,7 @@ public sealed class SectionRegistrar : IHostedService
         var selfAssembly = GetType().Assembly.FullName;
 
         if (cfg.EnableTrendingChannel)
-            Invoke(registerMethod, selfAssembly, "mmc-trending",      cfg.TrendingChannelName,       typeof(TrendingSectionHandler).FullName!);
-        if (cfg.EnableRecentMoviesChannel)
-            Invoke(registerMethod, selfAssembly, "mmc-recent-movies", cfg.RecentMoviesChannelName,   typeof(RecentMoviesSectionHandler).FullName!);
-        if (cfg.EnableRecentEpisodesChannel)
-            Invoke(registerMethod, selfAssembly, "mmc-recent-eps",    cfg.RecentEpisodesChannelName, typeof(RecentEpisodesSectionHandler).FullName!);
+            Invoke(registerMethod, selfAssembly, "mmc-trending", cfg.TrendingChannelName, typeof(TrendingSectionHandler).FullName!);
     }
 
     private void Invoke(MethodInfo register, string? selfAssembly, string id, string title, string handlerClass)
