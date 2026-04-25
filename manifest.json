@@ -13,7 +13,7 @@
         "changelog": "Fix month-grid calendar links: items were rendering with browser-default blue underline. Now inherit dark-theme text color with no underline; hover brightens the cell background instead.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v2.1.2.0/missing-media-checker_2.1.2.0.zip",
-        "checksum": "5dfb52b9f793579ab53a38128e6807d5",
+        "checksum": "f733c79c72117d1c062daa29e2a47d70",
         "timestamp": "2026-04-25T22:10:00Z"
       },
       {
