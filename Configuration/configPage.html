@@ -700,7 +700,13 @@
         }).catch(function (err) {
             qs('#mmcScanBtn').disabled       = false;
             qs('#mmcProgress').style.display = 'none';
-            Dashboard.alert('Failed to start scan. Check server logs.\n' + JSON.stringify(err));
+            var detail = [];
+            if (err && err.status)       detail.push('HTTP ' + err.status);
+            if (err && err.statusText)   detail.push(err.statusText);
+            if (err && err.responseText) detail.push(String(err.responseText).slice(0, 300));
+            if (err && err.message && detail.length === 0) detail.push(err.message);
+            console.error('[MissingMediaChecker] scan POST failed', err);
+            Dashboard.alert('Failed to start scan: ' + (detail.join(' — ') || 'unknown error (see browser console)'));
         });
     }
 

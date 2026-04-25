@@ -1,7 +1,7 @@
 ---
 name: "Missing Media Checker"
 guid: "9b8e1c4a-2d3f-4e5b-a6c7-d8e9f0a1b2c3"
-version: "2.0.2.0"
+version: "2.0.2.1"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
