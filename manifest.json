@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "2.0.2.1",
+        "changelog": "Tiny diagnostic release. The 'Failed to start scan' alert previously showed an empty {} because jqXHR fields are non-enumerable. Now shows HTTP status code, status text, and response body so the actual error is visible.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v2.0.2.1/missing-media-checker_2.0.2.1.zip",
+        "checksum": "d7f5d06a869ea87386ef771ce4491638",
+        "timestamp": "2026-04-25T10:35:08Z"
+      },
+      {
         "version": "2.0.2.0",
         "changelog": "## Performance fix\n\nJellyfin web UI became unresponsive whenever a Missing Media scan was running. Root cause: 16 parallel scan workers each issued their own SQLite query against the same database the UI uses \u2014 saturating both SQLite and the .NET threadpool.\n\n### Changes\n\n- **Bulk-load episodes** in one query upfront, then group by SeriesId in memory. Drops *N parallel \\`GetItemList(AncestorIds=...)\\` queries* down to a single one.\n- **Lower concurrency** from 16 \u2192 8 to leave threadpool headroom for UI request handlers.\n- **Drop \\`Task.Run\\` wrappers** around synchronous DB calls.\n- **Pre-filter movie scan** so only stand-alone movies (not already mapped via Jellyfin BoxSets) go through the parallel HTTP phase.\n\n### Impact\n\nA scan on a large library used to make the web UI sluggish for the entire duration of the scan. After this change the scan does mostly TMDB HTTP work, which doesn't compete with the UI's DB reads.\n\n### Upgrade\n\nDrop the DLL and restart Jellyfin.",
         "targetAbi": "10.11.0.0",
