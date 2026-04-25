@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "2.1.1.0",
+        "changelog": "## Calendar tab redesign\n\n### Two views \u2014 toggle in the toolbar\n\n**Agenda view** (default)\n- Date column: weekday + large day number (blue = today, amber = within 7 days)\n- Full-height poster\n- 2-line clamped overview\n- TMDB + Jellyfin links right-aligned\n\n**Month grid view**\n- Next 3 months, Mon\u2013Sun columns\n- Compact poster + episode number per cell\n- Each item is a clickable pill linking to TMDB\n- Today cell highlighted blue; past cells dimmed\n\n### Other improvements\n- **Refresh button feedback** \u2014 spinner while loading \u2192 green \"\u2713 Updated\" (2 s) \u2192 restores\n- **Yesterday** dimmed row + its own divider; **Today** divider in blue\n- **Summary chips** (N episodes / N movies) above the list\n\n## Upgrade\n\nDrop `Jellyfin.Plugin.MissingMediaChecker.dll` from the zip into your plugin directory and restart Jellyfin.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v2.1.1.0/missing-media-checker_2.1.1.0.zip",
+        "checksum": "ef5396e524237557a9a7b5ade4867d6a",
+        "timestamp": "2026-04-25T20:06:31Z"
+      },
+      {
         "version": "2.1.0.0",
         "changelog": "New Release Calendar tab: upcoming next-episode-to-air dates for every owned series plus future-release movies in box-set collections you already own at least one part of. Month-grouped layout with poster, weekday, TMDB + Jellyfin deep-links. Configurable lookahead (default 90 days) and cache TTL (default 6 h); Refresh button bypasses the cache.\n\nBackend: GET /MissingMedia/Calendar?days=&refresh=, CalendarService (parallel cap 8, cached). TmdbSeriesDetails now exposes next_episode_to_air. SectionContentCache.Invalidate(key) for per-key cache busting.\n\nDrop the DLL and restart Jellyfin.",
         "targetAbi": "10.11.0.0",
