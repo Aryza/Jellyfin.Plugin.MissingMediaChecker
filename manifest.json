@@ -13,7 +13,7 @@
         "changelog": "New Release Calendar tab: upcoming next-episode-to-air dates for every owned series plus future-release movies in box-set collections you already own at least one part of. Month-grouped layout with poster, weekday, TMDB + Jellyfin deep-links. Configurable lookahead (default 90 days) and cache TTL (default 6 h); Refresh button bypasses the cache.\n\nBackend: GET /MissingMedia/Calendar?days=&refresh=, CalendarService (parallel cap 8, cached). TmdbSeriesDetails now exposes next_episode_to_air. SectionContentCache.Invalidate(key) for per-key cache busting.\n\nDrop the DLL and restart Jellyfin.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v2.1.0.0/missing-media-checker_2.1.0.0.zip",
-        "checksum": "99085b7030525648c94d3c6ce8687ab2",
+        "checksum": "e822bf62d412ba10201b0e7bd8f2e7be",
         "timestamp": "2026-04-25T19:02:00Z"
       },
       {
