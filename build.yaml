@@ -1,7 +1,7 @@
 ---
 name: "Missing Media Checker"
 guid: "9b8e1c4a-2d3f-4e5b-a6c7-d8e9f0a1b2c3"
-version: "2.0.2.1"
+version: "2.0.2.2"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -14,6 +14,11 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.MissingMediaChecker.dll"
 changelog: |-
+  - UX: prominent banner on the config page when the TMDB API key is missing —
+    nothing in this plugin (scan, Trending section, pill) works without it
+  - UX: scan-failure alert now shows the real HTTP status + server message
+    (previously rendered as "{}")
+  - UX: Scan button blocks locally with a clear message if the key is empty
   - Perf: Jellyfin web UI no longer freezes during a scan
     - Bulk-load all episodes in one SQLite query instead of N parallel AncestorIds queries
     - Lower TMDB/parallel concurrency from 16 → 8 to leave threadpool headroom for the UI
