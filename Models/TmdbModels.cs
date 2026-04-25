@@ -15,6 +15,19 @@ public class TmdbSeriesDetails
     [JsonPropertyName("number_of_seasons")]  public int  NumberOfSeasons  { get; set; }
     [JsonPropertyName("number_of_episodes")] public int  NumberOfEpisodes { get; set; }
     [JsonPropertyName("seasons")]          public List<TmdbSeasonSummary> Seasons { get; set; } = new();
+    [JsonPropertyName("next_episode_to_air")] public TmdbUpcomingEpisode? NextEpisodeToAir { get; set; }
+    [JsonPropertyName("last_episode_to_air")] public TmdbUpcomingEpisode? LastEpisodeToAir { get; set; }
+}
+
+public class TmdbUpcomingEpisode
+{
+    [JsonPropertyName("id")]             public int     Id            { get; set; }
+    [JsonPropertyName("season_number")]  public int     SeasonNumber  { get; set; }
+    [JsonPropertyName("episode_number")] public int     EpisodeNumber { get; set; }
+    [JsonPropertyName("name")]           public string? Name          { get; set; }
+    [JsonPropertyName("overview")]       public string? Overview      { get; set; }
+    [JsonPropertyName("air_date")]       public string? AirDate       { get; set; }
+    [JsonPropertyName("still_path")]     public string? StillPath     { get; set; }
 }
 
 public class TmdbSeasonSummary

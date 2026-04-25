@@ -73,4 +73,9 @@ public static class SectionContentCache
     {
         foreach (var e in _entries.Values) { e.Value = null; e.ExpiresAt = DateTimeOffset.MinValue; }
     }
+
+    public static void Invalidate(string key)
+    {
+        if (_entries.TryGetValue(key, out var e)) { e.Value = null; e.ExpiresAt = DateTimeOffset.MinValue; }
+    }
 }

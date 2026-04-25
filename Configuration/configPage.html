@@ -222,6 +222,46 @@
                 .mmc-progress-track { background: rgba(255,255,255,0.1); border-radius: 3px; height: 8px; overflow: hidden; }
                 .mmc-progress-bar   { height: 100%; width: 0%; background: #00a4dc; transition: width 0.5s ease; }
 
+                /* Release Calendar tab */
+                .mmc-cal-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 1em; }
+                .mmc-cal-toolbar input[type="number"] {
+                    padding: 6px 10px; border-radius: 3px; width: 80px;
+                    border: 1px solid rgba(255,255,255,0.15);
+                    background: rgba(255,255,255,0.05); color: inherit; font-size: 0.9em;
+                }
+                .mmc-cal-month {
+                    margin: 1.4em 0 0.4em; padding-bottom: 4px;
+                    font-size: 0.95em; font-weight: 500; opacity: 0.85;
+                    border-bottom: 1px solid rgba(255,255,255,0.1);
+                }
+                .mmc-cal-row {
+                    display: flex; align-items: flex-start; gap: 14px;
+                    padding: 10px 12px;
+                    border: 1px solid rgba(255,255,255,0.08); border-radius: 4px;
+                    margin-bottom: 6px; background: rgba(255,255,255,0.02);
+                }
+                .mmc-cal-row:hover { background: rgba(255,255,255,0.05); }
+                .mmc-cal-date {
+                    flex: 0 0 64px; text-align: center; padding-top: 2px;
+                    font-size: 0.78em; opacity: 0.85; line-height: 1.25;
+                }
+                .mmc-cal-date .d { font-size: 1.6em; font-weight: bold; opacity: 1; color: #00a4dc; }
+                .mmc-cal-poster {
+                    flex: 0 0 40px; width: 40px; height: 60px; object-fit: cover;
+                    border-radius: 3px; background: rgba(255,255,255,0.05);
+                }
+                .mmc-cal-poster.placeholder {
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 0.65em; color: rgba(255,255,255,0.3);
+                    border: 1px dashed rgba(255,255,255,0.12);
+                }
+                .mmc-cal-meta { flex: 1; min-width: 0; }
+                .mmc-cal-title { font-weight: 500; font-size: 0.95em; }
+                .mmc-cal-sub { font-size: 0.82em; opacity: 0.65; margin-top: 2px; }
+                .mmc-cal-overview { font-size: 0.82em; opacity: 0.55; margin-top: 4px; max-width: 720px; }
+                .mmc-badge-cal-tv    { background: rgba(0,164,220,0.2);  color: #7dd3fc; margin-right: 6px; }
+                .mmc-badge-cal-movie { background: rgba(168,85,247,0.2); color: #d8b4fe; margin-right: 6px; }
+
                 .mmc-ign-list { margin-top: 0.5em; font-size: 0.85em; }
                 .mmc-ign-item {
                     display: inline-flex; align-items: center; gap: 6px;
@@ -242,6 +282,7 @@
             <div class="mmc-tabs">
                 <button type="button" class="mmc-tab active" data-tab="settings">Settings &amp; Scan</button>
                 <button type="button" class="mmc-tab" data-tab="report">Report</button>
+                <button type="button" class="mmc-tab" data-tab="calendar">Release Calendar</button>
                 <button type="button" class="mmc-tab" data-tab="ignores">Ignore list</button>
             </div>
 
@@ -373,6 +414,23 @@
                 </div>
 
                 <div class="verticalSection">
+                    <h3 class="sectionTitle">Release Calendar</h3>
+                    <p class="fieldDescription">
+                        The Release Calendar tab lists upcoming next-episode-to-air dates for owned series
+                        plus future-release movies in box-set collections you already own at least one part of.
+                        Requires the TMDB API key above.
+                    </p>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="mmcCalLookahead">Lookahead window (days)</label>
+                        <input type="number" id="mmcCalLookahead" class="emby-input" min="1" max="730" value="90">
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="mmcCalCacheMin">Calendar cache TTL (minutes)</label>
+                        <input type="number" id="mmcCalCacheMin" class="emby-input" min="1" max="10080" value="360">
+                    </div>
+                </div>
+
+                <div class="verticalSection">
                     <button is="emby-button" type="button" class="raised button-submit" id="mmcSaveBtn">
                         <span>Save Settings</span>
                     </button>
@@ -458,6 +516,20 @@
                 </div>
 
             </div><!-- /report panel -->
+
+            <!-- ══ Release Calendar ════════════════════════════════════════════ -->
+            <div class="mmc-panel" data-panel="calendar" style="display:none;">
+                <div class="mmc-cal-toolbar">
+                    <label for="mmcCalDays" style="font-size:0.9em;opacity:0.75;">Show next</label>
+                    <input type="number" id="mmcCalDays" min="1" max="730" value="90">
+                    <span style="font-size:0.9em;opacity:0.75;">days</span>
+                    <button id="mmcCalRefresh">Refresh from TMDB</button>
+                    <span id="mmcCalMeta" style="font-size:0.82em;opacity:0.55;margin-left:auto;"></span>
+                </div>
+                <div id="mmcCalLoad" class="mmc-load">Loading calendar…</div>
+                <div id="mmcCalErr"  class="mmc-err"  style="display:none;"></div>
+                <div id="mmcCalBody" style="display:none;"></div>
+            </div><!-- /calendar panel -->
 
             <!-- ══ Ignore list ═════════════════════════════════════════════════ -->
             <div class="mmc-panel" data-panel="ignores" style="display:none;">
@@ -549,8 +621,9 @@
         pageEl.querySelectorAll('.mmc-panel').forEach(function (p) {
             p.style.display = p.getAttribute('data-panel') === name ? '' : 'none';
         });
-        if (name === 'report')  loadReport();
-        if (name === 'ignores') loadIgnores();
+        if (name === 'report')   loadReport();
+        if (name === 'calendar') loadCalendar(false);
+        if (name === 'ignores')  loadIgnores();
     }
 
     // ── Event delegation ───────────────────────────────────────────────────────
@@ -574,6 +647,7 @@
             return;
         }
         if (t.closest && t.closest('#mmcDiagBtn'))     { ev.preventDefault(); doDiag(); return; }
+        if (t.closest && t.closest('#mmcCalRefresh')) { ev.preventDefault(); loadCalendar(true);  return; }
 
         // Ignore buttons (event-delegated on any .mmc-ign-btn inside report)
         var ignBtn = t.closest && t.closest('.mmc-ign-btn');
@@ -617,6 +691,7 @@
         if (ev.target.id === 'mmcFilterType') { filterType = ev.target.value; page = 1; render(); return; }
         if (ev.target.id === 'mmcSort')       { sortMode   = ev.target.value; page = 1; render(); return; }
         if (ev.target.id === 'mmcPageSize')   { pageSize   = parseInt(ev.target.value, 10) || 50; page = 1; render(); return; }
+        if (ev.target.id === 'mmcCalDays')    { loadCalendar(false); return; }
     });
 
     function parseIntOrNull(s) {
@@ -648,6 +723,12 @@
             qs('#mmcChTrendingName').value = cfg.TrendingChannelName   || 'Trending from your library';
             qs('#mmcChMaxItems').value     = cfg.ChannelMaxItems       || 50;
             qs('#mmcChCacheMin').value     = cfg.ChannelCacheMinutes   || 30;
+
+            // Release Calendar (v2.1)
+            var calDays = cfg.CalendarLookaheadDays || 90;
+            qs('#mmcCalLookahead').value = calDays;
+            qs('#mmcCalCacheMin').value  = cfg.CalendarCacheMinutes || 360;
+            qs('#mmcCalDays').value      = calDays;
         }).catch(function (err) {
             console.error('[MissingMediaChecker] loadSettings failed', err);
         });
@@ -676,6 +757,10 @@
             cfg.TrendingChannelName   = qs('#mmcChTrendingName').value.trim() || 'Trending from your library';
             cfg.ChannelMaxItems       = parseInt(qs('#mmcChMaxItems').value, 10) || 50;
             cfg.ChannelCacheMinutes   = parseInt(qs('#mmcChCacheMin').value, 10) || 30;
+
+            // Release Calendar (v2.1)
+            cfg.CalendarLookaheadDays = parseInt(qs('#mmcCalLookahead').value, 10) || 90;
+            cfg.CalendarCacheMinutes  = parseInt(qs('#mmcCalCacheMin').value, 10)  || 360;
 
             return ApiClient.updatePluginConfiguration(pid, cfg);
         }).then(function (result) {
@@ -1244,6 +1329,117 @@
                 });
             });
         });
+    }
+
+    // ── Release Calendar ───────────────────────────────────────────────────────
+    var calLoading = false;
+    function loadCalendar(force) {
+        if (calLoading) return;
+        calLoading = true;
+
+        var days  = parseInt(qs('#mmcCalDays').value, 10) || 90;
+        var path  = 'MissingMedia/Calendar?days=' + days + (force ? '&refresh=true' : '');
+
+        qs('#mmcCalLoad').style.display = 'block';
+        qs('#mmcCalErr').style.display  = 'none';
+        qs('#mmcCalBody').style.display = 'none';
+
+        apiGet(path).then(function (data) {
+            qs('#mmcCalLoad').style.display = 'none';
+            renderCalendar(data || { items: [] });
+            qs('#mmcCalBody').style.display = 'block';
+        }).catch(function (err) {
+            qs('#mmcCalLoad').style.display = 'none';
+            var bodyP = (err && typeof err.text === 'function')
+                ? err.text().catch(function () { return ''; })
+                : Promise.resolve(err && err.responseText ? String(err.responseText) : '');
+            bodyP.then(function (body) {
+                var msg = '';
+                try { var j = body ? JSON.parse(body) : null; msg = (j && j.message) ? j.message : ''; }
+                catch (e) { msg = body || ''; }
+                var head = err && err.status ? 'HTTP ' + err.status : 'error';
+                var el = qs('#mmcCalErr');
+                el.textContent = 'Failed to load calendar (' + head + ')' + (msg ? ': ' + msg.slice(0, 300) : '');
+                el.style.display = 'block';
+            });
+        }).finally(function () { calLoading = false; });
+    }
+
+    function renderCalendar(data) {
+        var body  = qs('#mmcCalBody');
+        var items = (data && data.items) || [];
+        var meta  = qs('#mmcCalMeta');
+        if (data && data.generatedAt) {
+            meta.textContent = items.length + ' upcoming · scanned ' +
+                (data.seriesScanned || 0) + ' series, ' +
+                (data.collectionsScanned || 0) + ' collections · ' +
+                'cached at ' + new Date(data.generatedAt).toLocaleString();
+        } else {
+            meta.textContent = '';
+        }
+
+        if (items.length === 0) {
+            body.innerHTML = '<div class="mmc-empty">Nothing scheduled in the selected window.</div>';
+            return;
+        }
+
+        var MONTHS = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+        var html = '';
+        var currentMonthKey = '';
+
+        items.forEach(function (it) {
+            var d = parseDate(it.date);
+            if (!d) return;
+            var monthKey = d.getFullYear() + '-' + d.getMonth();
+            if (monthKey !== currentMonthKey) {
+                html += '<div class="mmc-cal-month">' + esc(MONTHS[d.getMonth()] + ' ' + d.getFullYear()) + '</div>';
+                currentMonthKey = monthKey;
+            }
+
+            var poster = it.posterPath
+                ? '<img class="mmc-cal-poster" loading="lazy" alt="" src="https://image.tmdb.org/t/p/w92' + esc(it.posterPath) + '">'
+                : '<div class="mmc-cal-poster placeholder">no art</div>';
+
+            var badge = it.kind === 'movie'
+                ? '<span class="mmc-badge mmc-badge-cal-movie">Movie</span>'
+                : '<span class="mmc-badge mmc-badge-cal-tv">TV</span>';
+
+            var tmdbUrl = it.kind === 'movie'
+                ? 'https://www.themoviedb.org/movie/' + it.tmdbItemId
+                : 'https://www.themoviedb.org/tv/' + it.tmdbParentId +
+                  '/season/' + it.seasonNumber + '/episode/' + it.episodeNumber;
+
+            var jfLink = jellyfinLink(it.jellyfinId);
+            var weekday = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+
+            html +=
+                '<div class="mmc-cal-row">' +
+                    '<div class="mmc-cal-date">' +
+                        '<div class="d">' + d.getDate() + '</div>' +
+                        '<div>' + weekday + '</div>' +
+                    '</div>' +
+                    poster +
+                    '<div class="mmc-cal-meta">' +
+                        '<div class="mmc-cal-title">' + badge +
+                            '<a class="mmc-tmdb-link" href="' + tmdbUrl + '" target="_blank">' +
+                            esc(it.title) + '</a>' + jfLink +
+                        '</div>' +
+                        (it.subtitle ? '<div class="mmc-cal-sub">' + esc(it.subtitle) + '</div>' : '') +
+                        (it.overview ? '<div class="mmc-cal-overview">' + esc(it.overview) + '</div>' : '') +
+                    '</div>' +
+                '</div>';
+        });
+
+        body.innerHTML = html;
+    }
+
+    function parseDate(s) {
+        if (!s) return null;
+        // ISO yyyy-MM-dd parsed as local date (avoid UTC shift).
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+        if (!m) return null;
+        return new Date(+m[1], +m[2] - 1, +m[3]);
     }
 
     // ── Diagnostics ────────────────────────────────────────────────────────────

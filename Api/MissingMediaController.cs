@@ -348,6 +348,28 @@ public class MissingMediaController : ControllerBase
         });
     }
 
+    // ── GET /MissingMedia/Calendar ────────────────────────────────────────────
+    // Upcoming next-episode-to-air for owned series + future-release movies in
+    // owned BoxSet collections. Result is cached (CalendarCacheMinutes) so the
+    // typical UI refresh is free; pass refresh=true to force a TMDB rescan.
+    [HttpGet("Calendar")]
+    public async Task<ActionResult> GetCalendar(
+        [FromQuery] int? days = null,
+        [FromQuery] bool refresh = false,
+        CancellationToken ct = default)
+    {
+        var cfg = Plugin.Instance?.Configuration ?? new PluginConfiguration();
+        if (string.IsNullOrWhiteSpace(cfg.TmdbApiKey))
+            return BadRequest(new { message = "TMDB API key is not configured. Set it in plugin settings first." });
+
+        var lookahead = Math.Clamp(days ?? cfg.CalendarLookaheadDays, 1, 730);
+        var ttl       = TimeSpan.FromMinutes(Math.Max(1, cfg.CalendarCacheMinutes));
+
+        var svc = new CalendarService(_library, _loggerFactory.CreateLogger<CalendarService>());
+        var result = await svc.GetAsync(cfg.TmdbApiKey, lookahead, ttl, refresh, ct).ConfigureAwait(false);
+        return Ok(result ?? new CalendarResponse { LookaheadDays = lookahead });
+    }
+
     // ── POST /MissingMedia/Scan ───────────────────────────────────────────────
 
     [HttpPost("Scan")]

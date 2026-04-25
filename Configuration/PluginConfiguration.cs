@@ -72,4 +72,11 @@ public class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Per-section result cache TTL (minutes).</summary>
     public int ChannelCacheMinutes { get; set; } = 30;
+
+    // ── v2.1: Release Calendar ───────────────────────────────────────────────
+    /// <summary>Window (days) for the Release Calendar lookahead.</summary>
+    public int CalendarLookaheadDays { get; set; } = 90;
+
+    /// <summary>Calendar result cache TTL (minutes).</summary>
+    public int CalendarCacheMinutes { get; set; } = 360;
 }
