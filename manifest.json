@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "2.0.2.2",
+        "changelog": "TMDB API key required by every feature. Missing-key state now obvious: orange banner above the input, scan button blocks locally with clear message, scan-failure alert shows real HTTP status + server message instead of '{}'. Drop the DLL and restart Jellyfin.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v2.0.2.2/missing-media-checker_2.0.2.2.zip",
+        "checksum": "5a62e30398e0a91c081ebf4afa394536",
+        "timestamp": "2026-04-25T11:44:14Z"
+      },
+      {
         "version": "2.0.2.1",
         "changelog": "Tiny diagnostic release. The 'Failed to start scan' alert previously showed an empty {} because jqXHR fields are non-enumerable. Now shows HTTP status code, status text, and response body so the actual error is visible.",
         "targetAbi": "10.11.0.0",
