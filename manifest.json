@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "2.0.1.0",
+        "changelog": "## Changes\n\n- **Removed** \"Recently released\" and \"Recently aired\" home-screen sections\n- **Renamed** section: \"Trending (in library)\" \u2192 \"Trending from your library\"\n\n## Also includes (from v2.0.0.1)\n\n- **Fix:** Jellyfin page blank / Safari \"cannot decode raw data\" when File Transformation plugin is installed \u2014 pill middleware now handles gzip/deflate/br compressed responses correctly\n\n## Upgrade\n\nDrop the DLL into your plugin folder and restart Jellyfin.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v2.0.1.0/missing-media-checker_2.0.1.0.zip",
+        "checksum": "b7dab5d085bc462473da4081daca0e84",
+        "timestamp": "2026-04-25T00:20:46Z"
+      },
+      {
         "version": "2.0.0.1",
         "changelog": "## Hotfix\n\n**Bug:** Jellyfin web page showed blank / Safari \\\"cannot decode raw data\\\" error when the File Transformation plugin is installed alongside this plugin.\n\n**Root cause:** `ScriptInjectionMiddleware` (home-screen pill) was reading FileTransformation's gzip-compressed `index.html` response as raw UTF-8 bytes, producing garbage, then forwarding it with `Content-Encoding: gzip` still set \u2014 causing browsers to reject the body.\n\n**Fix:** Middleware now detects `Content-Encoding` (gzip/deflate/br), decompresses before injecting the pill script tag, strips the encoding header, and sends plain UTF-8.\n\nUpgrade: drop `Jellyfin.Plugin.MissingMediaChecker.dll` from the zip into your plugin directory and restart Jellyfin.",
         "targetAbi": "10.11.0.0",
