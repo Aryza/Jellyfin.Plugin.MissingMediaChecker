@@ -27,7 +27,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: 10.0.x
 
       - name: Resolve version
         id: ver
@@ -47,7 +47,7 @@ jobs:
         uses: oddstr13/jellyfin-plugin-repository-manager@v1.1.1
         with:
           version: ${{ steps.ver.outputs.version }}
-          dotnet-target: "net9.0"
+          dotnet-target: "net10.0"
 
       - name: Upload zip to release
         if: github.event_name == 'release'
