@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "2.2.0.0",
+        "changelog": "## Jellyfin 12.0 retarget\n\n- `targetAbi` bumped to **12.0.0.0**\n- Built against **Jellyfin 12.0.0-rc1** packages, targeting **.NET 10**\n- Plugin version `2.1.2.0` \u2192 `2.2.0.0`\n\nDrop `Jellyfin.Plugin.MissingMediaChecker.dll` from the zip into your plugin directory and restart Jellyfin.\n\n> Note: stable Jellyfin 12.0.0 is not yet on NuGet; this build targets the 12.0.0-rc1 release candidate.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.MissingMediaChecker/releases/download/v2.2.0.0/missing-media-checker_2.2.0.0.zip",
+        "checksum": "6ae5b130ac152ce76ee5a517e447c358",
+        "timestamp": "2026-06-23T20:58:23Z"
+      },
+      {
         "version": "2.1.2.0",
         "changelog": "Fix month-grid calendar links: items were rendering with browser-default blue underline. Now inherit dark-theme text color with no underline; hover brightens the cell background instead.",
         "targetAbi": "10.11.0.0",
