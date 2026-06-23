@@ -85,7 +85,7 @@ jobs:
           entry = {
               "version":    version,
               "changelog":  changelog,
-              "targetAbi":  "10.11.0.0",
+              "targetAbi":  "12.0.0.0",
               "sourceUrl":  source_url,
               "checksum":   checksum,
               "timestamp":  timestamp,
